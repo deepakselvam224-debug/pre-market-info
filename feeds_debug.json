@@ -1,0 +1,36 @@
+{
+  "https://www.moneycontrol.com/rss/marketnews.xml": {
+    "status": "error",
+    "feedTitle": "none",
+    "itemsCount": 0,
+    "sampleItem": null
+  },
+  "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms": {
+    "status": "ok",
+    "feedTitle": "Markets-Economic Times",
+    "itemsCount": 10,
+    "sampleItem": {
+      "title": "Alpine Texworld IPO Day 2: GMP at 10%; check subscription, valuation and other key details",
+      "pubDate": "2026-07-15 03:43:47",
+      "description": "The Rs 126.25 crore Alpine Texworld IPO witnessed healthy investor interest on Day 2, with the issue subscribed 28% on the first day, led by retail participation. The IPO is commanding a grey market premium of around 10%, indicating a potential listing price of about Rs 115 per share against the upper price band of Rs 105. The issue closes for subscription on July 16.",
+      "content": "The Rs 126.25 crore Alpine Texworld IPO witnessed healthy investor interest on Day 2, with the issue subscribed 28% on the first day, led by retail participation. The IPO is commanding a grey market premium of around 10%, indicating a potential listing price of about Rs 115 per share against the upper price band of Rs 105. The issue closes for subscription on July 16."
+    }
+  },
+  "https://finance.yahoo.com/news/category-energy/rss": {
+    "status": "error",
+    "feedTitle": "none",
+    "itemsCount": 0,
+    "sampleItem": null
+  },
+  "https://news.google.com/rss/search?q=Natural+Gas+energy+colder+storage+lng+when:2d&hl=en-US&gl=US&ceid=US:en": {
+    "status": "ok",
+    "feedTitle": "\"Natural Gas energy colder storage lng when:2d\" - Google News",
+    "itemsCount": 3,
+    "sampleItem": {
+      "title": "EEX THE EGSI Natural Gas Day Futures (Jul 2026 D11) Trade Ideas — EEX:GG11N2026 - TradingView",
+      "pubDate": "2026-07-13 16:12:23",
+      "description": "\n<a href=\"https://news.google.com/rss/articles/CBMihAFBVV95cUxNR1RNRUItNzNxMWZPNFppOGNGcm9CR29GbTFTcG5RNWVEdTJrbkUwMGIxX2pfb1k3bmVha1psOVU5Sm53TGt0c3BRazlEeTBITko3M25aY1BER2RKMWhsTDNXSTQ1d2k4cGIzLTBkbUNDY25FZFY1cUY3eEtTZW5CQlZDUk4?oc=5\" target=\"_blank\">EEX THE EGSI Natural Gas Day Futures (Jul 2026 D11) Trade Ideas — EEX:GG11N2026</a>  TradingView",
+      "content": "\n<a href=\"https://news.google.com/rss/articles/CBMihAFBVV95cUxNR1RNRUItNzNxMWZPNFppOGNGcm9CR29GbTFTcG5RNWVEdTJrbkUwMGIxX2pfb1k3bmVha1psOVU5Sm53TGt0c3BRazlEeTBITko3M25aY1BER2RKMWhsTDNXSTQ1d2k4cGIzLTBkbUNDY25FZFY1cUY3eEtTZW5CQlZDUk4?oc=5\" target=\"_blank\">EEX THE EGSI Natural Gas Day Futures (Jul 2026 D11) Trade Ideas — EEX:GG11N2026</a>  TradingView"
+    }
+  }
+}
