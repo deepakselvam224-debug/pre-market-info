@@ -558,6 +558,18 @@ function calculateStrategy1(chartResult, cpr) {
     }
   }
 
+  const lastC = closes[closes.length - 1] || 0;
+  const ma15 = closes.length >= 3 ? closes.slice(-3).reduce((a, b) => a + b, 0) / 3 : lastC;
+  const ma60 = closes.length >= 12 ? closes.slice(-12).reduce((a, b) => a + b, 0) / 12 : lastC;
+  const prevCloseVal = cpr ? cpr.p : lastC;
+
+  const trends = {
+    '5m': lastC > (cprMax) ? 'bull' : 'bear',
+    '15m': lastC > ma15 ? 'bull' : 'bear',
+    '1h': lastC > ma60 ? 'bull' : 'bear',
+    '1d': lastC > prevCloseVal ? 'bull' : 'bear'
+  };
+
   return {
     state,
     swingHigh,
@@ -568,7 +580,8 @@ function calculateStrategy1(chartResult, cpr) {
     setupType,
     signalType,
     cprText,
-    currentVwap: null
+    currentVwap: null,
+    trends
   };
 }
 
@@ -717,6 +730,19 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
     }
   }
 
+  const lastC = closes[closes.length - 1] || 0;
+  const lastVwap = vwaps[vwaps.length - 1] || lastC;
+  const ma15 = closes.length >= 3 ? closes.slice(-3).reduce((a, b) => a + b, 0) / 3 : lastC;
+  const ma60 = closes.length >= 12 ? closes.slice(-12).reduce((a, b) => a + b, 0) / 12 : lastC;
+  const prevCloseVal = cpr ? cpr.p : lastC;
+
+  const trends = {
+    '5m': lastC > lastVwap ? 'bull' : 'bear',
+    '15m': lastC > ma15 ? 'bull' : 'bear',
+    '1h': lastC > ma60 ? 'bull' : 'bear',
+    '1d': lastC > prevCloseVal ? 'bull' : 'bear'
+  };
+
   return {
     state,
     swingHigh,
@@ -725,7 +751,8 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
     sl,
     target,
     signalType,
-    currentVwap
+    currentVwap,
+    trends
   };
 }
 

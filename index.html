@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=15.0">
+  <link rel="stylesheet" href="styles.css?v=16.0">
   <!-- TradingView Widget Script Loader -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 </head>
@@ -67,6 +67,12 @@
         <span style="color: var(--bearish)">BEARISH</span>
         <span id="sentiment-score-text">NEUTRAL (0%)</span>
         <span style="color: var(--bullish)">BULLISH</span>
+      </div>
+      <div class="bulletin-divider"></div>
+      <div class="bulletin-box" id="premarket-bulletin">
+        <div class="bulletin-item" id="bulletin-global">🟢 Loading Global Market outlook...</div>
+        <div class="bulletin-item" id="bulletin-forex">⚪ Loading USD/INR sentiment...</div>
+        <div class="bulletin-item" id="bulletin-cpr">⚡ Loading Nifty CPR structure...</div>
       </div>
     </div>
 
@@ -172,6 +178,15 @@
               <div class="strat-details" id="nifty-strat-details">
                 Waiting for price momentum...
               </div>
+              <div class="trend-grid-container">
+                <span class="trend-grid-label">Trend Grid:</span>
+                <div class="trend-grid" id="nifty-trend-grid">
+                  <div class="trend-pill trend-bull" id="nifty-trend-5m">5m: --</div>
+                  <div class="trend-pill trend-bull" id="nifty-trend-15m">15m: --</div>
+                  <div class="trend-pill trend-bear" id="nifty-trend-1h">1h: --</div>
+                  <div class="trend-pill trend-bull" id="nifty-trend-1d">1d: --</div>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -207,6 +222,15 @@
               </div>
               <div class="strat-details" id="banknifty-strat-details">
                 Waiting for price momentum...
+              </div>
+              <div class="trend-grid-container">
+                <span class="trend-grid-label">Trend Grid:</span>
+                <div class="trend-grid" id="banknifty-trend-grid">
+                  <div class="trend-pill trend-bull" id="banknifty-trend-5m">5m: --</div>
+                  <div class="trend-pill trend-bull" id="banknifty-trend-15m">15m: --</div>
+                  <div class="trend-pill trend-bear" id="banknifty-trend-1h">1h: --</div>
+                  <div class="trend-pill trend-bull" id="banknifty-trend-1d">1d: --</div>
+                </div>
               </div>
             </div>
           </div>
@@ -290,6 +314,15 @@
               <div class="strat-details" id="gas-strat-details">
                 Waiting for price momentum...
               </div>
+              <div class="trend-grid-container">
+                <span class="trend-grid-label">Trend Grid:</span>
+                <div class="trend-grid" id="gas-trend-grid">
+                  <div class="trend-pill trend-bull" id="gas-trend-5m">5m: --</div>
+                  <div class="trend-pill trend-bull" id="gas-trend-15m">15m: --</div>
+                  <div class="trend-pill trend-bear" id="gas-trend-1h">1h: --</div>
+                  <div class="trend-pill trend-bull" id="gas-trend-1d">1d: --</div>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -324,6 +357,15 @@
               </div>
               <div class="strat-details" id="eth-strat-details">
                 Waiting for price momentum...
+              </div>
+              <div class="trend-grid-container">
+                <span class="trend-grid-label">Trend Grid:</span>
+                <div class="trend-grid" id="eth-trend-grid">
+                  <div class="trend-pill trend-bull" id="eth-trend-5m">5m: --</div>
+                  <div class="trend-pill trend-bull" id="eth-trend-15m">15m: --</div>
+                  <div class="trend-pill trend-bear" id="eth-trend-1h">1h: --</div>
+                  <div class="trend-pill trend-bull" id="eth-trend-1d">1d: --</div>
+                </div>
               </div>
             </div>
           </div>
@@ -617,6 +659,6 @@
   </main>
 
   <!-- Application JS Code -->
-  <script src="app.js?v=15.0"></script>
+  <script src="app.js?v=16.0"></script>
 </body>
 </html>

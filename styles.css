@@ -1549,3 +1549,96 @@ input:checked + .slider:before {
   color: #f87171;
   font-weight: 700;
 }
+
+/* Pre-Market Bulletin styling */
+.bulletin-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0.65rem 0;
+}
+
+.bulletin-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  text-align: left;
+}
+
+.bulletin-item {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Multi-Timeframe Trend Grid styling */
+.trend-grid-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.trend-grid-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  min-width: 60px;
+}
+
+.trend-grid {
+  display: flex;
+  gap: 0.35rem;
+  flex-grow: 1;
+}
+
+.trend-pill {
+  flex: 1;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.18rem 0;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.trend-bull {
+  background: rgba(16, 185, 129, 0.08) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.18) !important;
+}
+
+.trend-bear {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.18) !important;
+}
+
+/* Event countdown badges */
+.event-countdown-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.12rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.event-active .event-countdown-badge {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.2);
+}

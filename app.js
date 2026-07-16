@@ -168,6 +168,45 @@ function updateSentimentGauge(data) {
     const formattedScore = score >= 0 ? `+${score.toFixed(0)}` : score.toFixed(0);
     labelEl.textContent = `${ratingText} (${formattedScore}%)`;
   }
+
+  // Populate dynamic Pre-Market Bulletins
+  const bulletinGlobalEl = document.getElementById('bulletin-global');
+  const bulletinForexEl = document.getElementById('bulletin-forex');
+  const bulletinCprEl = document.getElementById('bulletin-cpr');
+
+  if (bulletinGlobalEl) {
+    if (spxChg > 0.25) {
+      bulletinGlobalEl.innerHTML = `🟢 Global markets are pointing to a positive open (S&P 500 up +${spxChg.toFixed(2)}%).`;
+    } else if (spxChg < -0.25) {
+      bulletinGlobalEl.innerHTML = `🔴 Global markets are pointing to a weak open (S&P 500 down ${spxChg.toFixed(2)}%).`;
+    } else {
+      bulletinGlobalEl.innerHTML = `⚪ Global markets are flat and rangebound (S&P 500 change is ${spxChg.toFixed(2)}%).`;
+    }
+  }
+
+  if (bulletinForexEl) {
+    if (usdinrChg > 0.1) {
+      bulletinForexEl.innerHTML = `🔴 USD/INR is rising (+${usdinrChg.toFixed(2)}%), indicating minor bearish pressure on INR.`;
+    } else if (usdinrChg < -0.1) {
+      bulletinForexEl.innerHTML = `🟢 USD/INR is declining (${usdinrChg.toFixed(2)}%), providing bullish support for Indian stocks.`;
+    } else {
+      bulletinForexEl.innerHTML = `⚪ USD/INR remains stable, holding neutral pre-market sentiment.`;
+    }
+  }
+
+  if (bulletinCprEl && data.nifty && data.nifty.strategy) {
+    const cpr = data.nifty.cpr;
+    if (cpr) {
+      const width = Math.abs(cpr.tc - cpr.bc);
+      if (width < 35) {
+        bulletinCprEl.innerHTML = `⚡ Narrow Nifty CPR today (${width.toFixed(1)} pts): expect a strong momentum trend.`;
+      } else {
+        bulletinCprEl.innerHTML = `🔄 Wider Nifty CPR today (${width.toFixed(1)} pts): expect rangebound volatility.`;
+      }
+    } else {
+      bulletinCprEl.innerHTML = `⚡ Nifty strategy is active: monitoring price breakout points.`;
+    }
+  }
 }
 
 function updateTradeLogTable(tradeLog) {
@@ -383,6 +422,19 @@ function updateIndexCard(id, indexData) {
     stratStateEl.className = `strat-status-val ${stateClass}`;
     stratStateEl.textContent = stateText;
     stratDetailsEl.innerHTML = detailsHtml;
+
+    // Render Multi-Timeframe Trend Grid
+    if (s.trends) {
+      const timeframes = ['5m', '15m', '1h', '1d'];
+      timeframes.forEach(tf => {
+        const pill = document.getElementById(`${id}-trend-${tf}`);
+        if (pill) {
+          const isBull = (s.trends[tf] === 'bull');
+          pill.className = `trend-pill ${isBull ? 'trend-bull' : 'trend-bear'}`;
+          pill.textContent = `${tf}: ${isBull ? 'Bull 🟢' : 'Bear 🔴'}`;
+        }
+      });
+    }
   }
 
   // Update corresponding ticker items
@@ -478,6 +530,93 @@ function updateClockAndTimers() {
 
   document.getElementById('premarket-countdown').textContent = formatCountdown(premarketDiff);
   document.getElementById('open-countdown').textContent = formatCountdown(openDiff);
+
+  // Update Live Event Countdown Warnings
+  updateCalendarCountdowns(now);
+}
+
+const CALENDAR_EVENTS = [
+  { id: 'ev-premarket', title: 'NSE Pre-market Trading Window opens', timeStr: '09:00 AM', country: 'IN', impact: 'HIGH IMPACT', hour: 9, min: 0 },
+  { id: 'ev-open', title: 'Indian Equity Markets Open', timeStr: '09:15 AM', country: 'IN', impact: 'HIGH IMPACT', hour: 9, min: 15 },
+  { id: 'ev-building', title: 'US Building Permits / Housing Starts', timeStr: '06:00 PM', country: 'US', impact: 'MEDIUM IMPACT', hour: 18, min: 0 },
+  { id: 'ev-eia', title: 'EIA Weekly Natural Gas Storage Report', timeStr: '08:00 PM', country: 'US', impact: 'CRITICAL FOR NG', hour: 20, min: 0 }
+];
+
+function updateCalendarCountdowns(now) {
+  const container = document.querySelector('.calendar-events');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  const day = now.getDay();
+  const isWeekend = (day === 0 || day === 6);
+
+  CALENDAR_EVENTS.forEach(ev => {
+    let targetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), ev.hour, ev.min, 0);
+    
+    // Check if event is completed for today
+    let timeDiffMs = targetTime.getTime() - now.getTime();
+    
+    let countdownText = '';
+    let statusClass = '';
+
+    if (timeDiffMs > 0) {
+      // Event is upcoming
+      const totalSecs = Math.floor(timeDiffMs / 1000);
+      const hours = Math.floor(totalSecs / 3600);
+      const minutes = Math.floor((totalSecs % 3600) / 60);
+      
+      if (hours > 0) {
+        countdownText = `starts in ${hours}h ${minutes}m`;
+      } else {
+        countdownText = `starts in ${minutes}m`;
+      }
+      statusClass = 'event-upcoming';
+    } else if (timeDiffMs <= 0 && timeDiffMs >= -3600000) {
+      // Currently active (running within last 1 hour)
+      countdownText = '🟢 LIVE ACTIVE';
+      statusClass = 'event-active';
+    } else {
+      // Completed today
+      countdownText = '✓ COMPLETED';
+      statusClass = 'event-completed';
+      
+      // Target next day's event if past
+      targetTime.setDate(targetTime.getDate() + 1);
+      timeDiffMs = targetTime.getTime() - now.getTime();
+      const totalSecs = Math.floor(timeDiffMs / 1000);
+      const hours = Math.floor(totalSecs / 3600);
+      const minutes = Math.floor((totalSecs % 3600) / 60);
+      countdownText = `next in ${hours}h ${minutes}m`;
+    }
+
+    const eventItem = document.createElement('div');
+    eventItem.className = `event-item ${statusClass}`;
+    
+    const highlightTodayClass = (ev.id === 'ev-premarket' || ev.id === 'ev-open') ? 'highlight-today' : '';
+    if (highlightTodayClass) eventItem.classList.add(highlightTodayClass);
+
+    // Custom coloring for critical/high impact indicators
+    const isCritical = ev.impact.includes("CRITICAL");
+    const isHigh = ev.impact.includes("HIGH");
+    const impactClass = isCritical ? 'critical' : (isHigh ? 'high' : 'medium');
+
+    eventItem.innerHTML = `
+      <div class="event-meta">
+        <span class="event-time">${ev.timeStr}</span>
+        <span class="event-country ${ev.country}">${ev.country}</span>
+      </div>
+      <div class="event-detail">
+        <p class="event-title">${ev.title}</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem;">
+          <span class="event-impact ${impactClass}">${ev.impact}</span>
+          <span class="event-countdown-badge">${countdownText}</span>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(eventItem);
+  });
 }
 
 function formatCountdown(ms) {
