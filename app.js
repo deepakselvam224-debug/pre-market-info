@@ -93,6 +93,9 @@ const FALLBACK_GAS_NEWS = [
 
 // Document Ready Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Theme (Light/Dark)
+  initTheme();
+
   // 1. Fetch Live Index Quotes from server API and start poller (every 5 seconds)
   fetchLiveQuotes();
   setInterval(fetchLiveQuotes, 5000);
@@ -1066,4 +1069,41 @@ function saveNotificationSettings() {
       console.error("Failed to save notification settings:", error);
     }
   }, 500);
+}
+
+// Theme Toggle Engine (Light/Dark Modes)
+function initTheme() {
+  const currentTheme = localStorage.getItem('theme') || 'dark';
+  if (currentTheme === 'light') {
+    document.body.classList.add('light-theme');
+    updateThemeIcon('light');
+  } else {
+    document.body.classList.remove('light-theme');
+    updateThemeIcon('dark');
+  }
+}
+
+function toggleTheme() {
+  const body = document.body;
+  if (body.classList.contains('light-theme')) {
+    body.classList.remove('light-theme');
+    localStorage.setItem('theme', 'dark');
+    updateThemeIcon('dark');
+  } else {
+    body.classList.add('light-theme');
+    localStorage.setItem('theme', 'light');
+    updateThemeIcon('light');
+  }
+}
+
+function updateThemeIcon(theme) {
+  const icon = document.getElementById('theme-icon');
+  if (!icon) return;
+  if (theme === 'light') {
+    // Moon icon for switching to dark mode
+    icon.innerHTML = `<path d="M12.1 22h-.1c-5.5 0-10-4.5-10-10 0-4.8 3.5-8.9 8.2-9.8.5-.1 1 .2 1.2.7.2.5.1 1.1-.3 1.4-2.8 2.2-4.2 5.7-3.6 9.3.8 4.6 4.7 8.2 9.3 8.6 3.6.4 7.1-1 9.3-3.7.3-.4.9-.5 1.4-.3.5.2.8.7.7 1.2-.9 4.6-5 8.1-9.8 8.2v.1z"/>`;
+  } else {
+    // Sun icon for switching to light mode
+    icon.innerHTML = `<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L19.42 4.58zM5.99 18.01l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0z"/>`;
+  }
 }

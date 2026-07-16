@@ -1642,3 +1642,222 @@ input:checked + .slider:before {
   border-color: rgba(16, 185, 129, 0.25) !important;
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.2);
 }
+
+/* Light Theme Variables and Element Styles */
+body.light-theme {
+  --bg-main: #f0f2f5;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-glow-eq: rgba(16, 185, 129, 0.15);
+  --border-glow-cmd: rgba(6, 182, 212, 0.15);
+  --text-primary: #111827;
+  --text-muted: #4b5563;
+  --text-dark: #8b949e;
+  
+  --bullish-glow: rgba(16, 185, 129, 0.08);
+  --bearish-glow: rgba(239, 68, 68, 0.08);
+  --gas-cyan-glow: rgba(6, 182, 212, 0.08);
+}
+
+/* Light Theme Component Overrides */
+body.light-theme .section-card,
+body.light-theme .news-container,
+body.light-theme .sentiment-gauge-container,
+body.light-theme .cpr-banner,
+body.light-theme .timer-box,
+body.light-theme .checklist-item,
+body.light-theme .notes-textarea {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .section-card {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .timer-box {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .timer-value {
+  color: #111827 !important;
+}
+
+body.light-theme .live-clock-container {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .clock-time {
+  color: #111827 !important;
+}
+
+body.light-theme .sentiment-gauge-container {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-theme #sentiment-score-text {
+  color: #111827 !important;
+}
+
+body.light-theme .bulletin-item {
+  color: #1f2937 !important;
+}
+
+body.light-theme .bulletin-divider {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .index-card-title h2,
+body.light-theme .card-header h3 {
+  color: #111827 !important;
+}
+
+body.light-theme .index-live-price {
+  color: #111827 !important;
+}
+
+body.light-theme .cpr-value {
+  color: #1f2937 !important;
+}
+
+body.light-theme .cpr-label {
+  color: #4b5563 !important;
+}
+
+body.light-theme .strat-label {
+  color: #4b5563 !important;
+}
+
+body.light-theme .cpr-narrow {
+  background: rgba(16, 185, 129, 0.08) !important;
+}
+
+body.light-theme .cpr-wider {
+  background: rgba(245, 158, 11, 0.08) !important;
+}
+
+body.light-theme .news-card {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-theme .news-card:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-theme .news-title {
+  color: #1f2937 !important;
+}
+
+body.light-theme .news-title:hover {
+  color: #10b981 !important;
+}
+
+body.light-theme .news-tab-btn {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: #4b5563 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .news-tab-btn.active {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+body.light-theme .news-meta {
+  color: #6b7280 !important;
+}
+
+body.light-theme .notes-textarea {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #111827 !important;
+}
+
+body.light-theme .checklist-item {
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .checklist-item span {
+  color: #1f2937 !important;
+}
+
+body.light-theme .checklist-item.checked span {
+  color: #9ca3af !important;
+}
+
+body.light-theme .event-item {
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .event-title {
+  color: #1f2937 !important;
+}
+
+body.light-theme .event-countdown-badge {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #4b5563 !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-theme .trade-log-table th {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: #4b5563 !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .trade-log-table td {
+  color: #1f2937 !important;
+  border-bottom-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .trade-log-table tr:hover {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+body.light-theme .logo-text h1 {
+  color: #111827 !important;
+}
+
+body.light-theme .logo-text h1 span {
+  color: #10b981 !important;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Theme Toggle Button Styling */
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  cursor: pointer;
+  margin-left: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(30deg);
+}
+
+body.light-theme .theme-toggle-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #111827;
+}
+
+body.light-theme .theme-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
