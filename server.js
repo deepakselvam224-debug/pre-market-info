@@ -1090,10 +1090,33 @@ function getParsedNews() {
   });
 }
 
-// Server-side Trade Log store & Price checking engine
+// Server-side Trade Log store & Price checking engine with file persistence
+const TRADE_LOG_FILE = path.join(__dirname, 'trade_history.json');
 let tradeLog = [];
 
+try {
+  if (fs.existsSync(TRADE_LOG_FILE)) {
+    const fileData = fs.readFileSync(TRADE_LOG_FILE, 'utf8');
+    tradeLog = JSON.parse(fileData);
+  }
+} catch (e) {
+  console.error("Error loading trade history file:", e);
+}
+
+function saveTradeLogToFile() {
+  try {
+    if (tradeLog.length > 200) {
+      tradeLog = tradeLog.slice(-200);
+    }
+    fs.writeFileSync(TRADE_LOG_FILE, JSON.stringify(tradeLog, null, 2), 'utf8');
+  } catch (e) {
+    console.error("Error saving trade history file:", e);
+  }
+}
+
 function updateTradeLog(nifty, banknifty, gas, eth) {
+  let logChanged = false;
+
   const checkLogTrigger = (id, name, data) => {
     if (!data || !data.strategy) return;
     const s = data.strategy;
@@ -1101,9 +1124,12 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
       const tradeId = `${id}_${s.signalType}_${s.entry.toFixed(1)}`;
       const exists = tradeLog.some(t => t.tradeId === tradeId);
       if (!exists) {
+        const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
+        const timeStr = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+        
         tradeLog.push({
           tradeId,
-          time: new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }),
+          time: `${todayStr}, ${timeStr}`,
           asset: name,
           setup: s.setupType ? `Setup ${s.setupType}` : 'VWAP Retest',
           direction: s.signalType,
@@ -1112,6 +1138,7 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
           sl: s.sl,
           status: 'Active'
         });
+        logChanged = true;
       }
     }
   };
@@ -1133,22 +1160,31 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
     if (t.status === 'Active') {
       const price = getAssetPrice(t.asset);
       if (price !== null) {
+        let newStatus = 'Active';
         if (t.direction === 'LONG') {
           if (t.target && price >= t.target) {
-            t.status = 'Target Hit 🟢';
+            newStatus = 'Target Hit 🟢';
           } else if (t.sl && price <= t.sl) {
-            t.status = 'SL Hit 🔴';
+            newStatus = 'SL Hit 🔴';
           }
         } else if (t.direction === 'SHORT') {
           if (t.target && price <= t.target) {
-            t.status = 'Target Hit 🟢';
+            newStatus = 'Target Hit 🟢';
           } else if (t.sl && price >= t.sl) {
-            t.status = 'SL Hit 🔴';
+            newStatus = 'SL Hit 🔴';
           }
+        }
+        if (newStatus !== 'Active') {
+          t.status = newStatus;
+          logChanged = true;
         }
       }
     }
   });
+
+  if (logChanged) {
+    saveTradeLogToFile();
+  }
 }
 
 server.listen(PORT, '0.0.0.0', () => {
