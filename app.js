@@ -501,7 +501,6 @@ function applyNoteTemplate(forceSilent = false) {
 - Support: S1: _______ | S2: _______
 - Resistance: R1: _______ | R2: _______
 - Trigger Action: `;
-
   const templateToApply = customTemplate || defaultTemplate;
 
   if (forceSilent || textarea.value.trim() === '' || confirm("Overwrite current notes with your template?")) {
@@ -512,6 +511,26 @@ function applyNoteTemplate(forceSilent = false) {
 
 
 /* --- CATALYST NEWS FEED AGGREGATION & OVERNIGHT NEWS FILTER --- */
+let RAW_EQ_NEWS = [];
+let RAW_GAS_NEWS = [];
+let currentEqNewsTab = 'overnight';
+let currentGasNewsTab = 'overnight';
+
+// Expose switch functions to global window context so onclick inline handlers work
+window.switchEqNewsTab = function(tab) {
+  currentEqNewsTab = tab;
+  document.getElementById('tab-eq-overnight').className = tab === 'overnight' ? 'news-tab active' : 'news-tab';
+  document.getElementById('tab-eq-trading').className = tab === 'trading' ? 'news-tab active' : 'news-tab';
+  renderNewsDesk();
+};
+
+window.switchGasNewsTab = function(tab) {
+  currentGasNewsTab = tab;
+  document.getElementById('tab-gas-overnight').className = tab === 'overnight' ? 'news-tab active' : 'news-tab';
+  document.getElementById('tab-gas-trading').className = tab === 'trading' ? 'news-tab active' : 'news-tab';
+  renderNewsDesk();
+};
+
 async function refreshAllFeeds() {
   const refreshButton = document.querySelector('.refresh-all-btn');
   if (refreshButton) refreshButton.classList.add('spinning');
@@ -519,36 +538,21 @@ async function refreshAllFeeds() {
   document.getElementById('eq-feed-time').textContent = "Updating...";
   document.getElementById('gas-feed-time').textContent = "Updating...";
 
-  // 1. Fetch Indian Markets feed (including Google News backup for maximum reliability)
-  const eqFeeds = [
-    'https://www.moneycontrol.com/rss/marketnews.xml',
-    'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms',
-    'https://news.google.com/rss/search?q=Nifty+50+OR+Bank+Nifty+OR+SEBI+market+when:1d&hl=en-IN&gl=IN&ceid=IN:en'
-  ];
-  
-  // 2. Fetch Natural Gas feeds (Broadened Google News query for plenty of fresh bulletins)
-  const gasFeeds = [
-    'https://news.google.com/rss/search?q=Natural+Gas+OR+Henry+Hub+OR+LNG+energy+storage+weather+when:3d&hl=en-US&gl=US&ceid=US:en'
-  ];
-
   try {
-    // Parallel fetch feeds
-    const [eqNews, gasNews] = await Promise.all([
-      fetchMultipleFeeds(eqFeeds, 'equity'),
-      fetchMultipleFeeds(gasFeeds, 'gas')
-    ]);
+    const response = await fetch('/api/news');
+    if (!response.ok) throw new Error("News API failed");
+    const data = await response.json();
 
-    renderCatalystList('eq-news-list', eqNews, 'equity');
-    renderCatalystList('gas-news-list', gasNews, 'gas');
-    
-    // Update US Weather and EIA status indicators
-    updateGasStatIndicators(gasNews);
+    RAW_EQ_NEWS = data.equity || [];
+    RAW_GAS_NEWS = data.gas || [];
+
+    renderNewsDesk();
 
   } catch (error) {
     console.error("Feed aggregation error, serving fallback templates", error);
-    renderCatalystList('eq-news-list', FALLBACK_EQ_NEWS, 'equity', true);
-    renderCatalystList('gas-news-list', FALLBACK_GAS_NEWS, 'gas', true);
-    updateGasStatIndicators(FALLBACK_GAS_NEWS);
+    RAW_EQ_NEWS = FALLBACK_EQ_NEWS;
+    RAW_GAS_NEWS = FALLBACK_GAS_NEWS;
+    renderNewsDesk();
   } finally {
     if (refreshButton) refreshButton.classList.remove('spinning');
     
@@ -558,94 +562,59 @@ async function refreshAllFeeds() {
   }
 }
 
-// Fetch RSS feeds converted to JSON via rss2json API
-async function fetchMultipleFeeds(feedUrls, category) {
-  let aggregated = [];
+// Render filtered lists on the dashboard based on active tabs
+function renderNewsDesk() {
+  const filteredEq = filterNewsByTab(RAW_EQ_NEWS, currentEqNewsTab);
+  const filteredGas = filterNewsByTab(RAW_GAS_NEWS, currentGasNewsTab);
+
+  renderCatalystList('eq-news-list', filteredEq, 'equity');
+  renderCatalystList('gas-news-list', filteredGas, 'gas');
   
-  const fetches = feedUrls.map(async (url) => {
-    try {
-      const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
-      if (!response.ok) throw new Error("CORS Proxy request failed");
-      const data = await response.json();
-      
-      if (data.status === 'ok' && data.items) {
-        return data.items.map(item => {
-          let cleanSource = data.feed.title || "Financial Feed";
-          if (cleanSource.includes("Moneycontrol")) cleanSource = "Moneycontrol";
-          else if (cleanSource.includes("Economic Times")) cleanSource = "Economic Times";
-          else if (cleanSource.includes("Yahoo")) cleanSource = "Yahoo Finance";
-          else if (cleanSource.includes("Google News")) cleanSource = "Google News";
-
-          return {
-            title: item.title,
-            pubDate: item.pubDate || item.pubdate,
-            source: cleanSource,
-            description: stripHTML(item.content || item.description || ""),
-            link: item.link
-          };
-        });
-      }
-      return [];
-    } catch (e) {
-      console.warn(`Failed to fetch RSS feed: ${url}`, e);
-      return [];
-    }
-  });
-
-  const results = await Promise.all(fetches);
-  results.forEach(res => { aggregated = aggregated.concat(res); });
-  
-  // Sort by date descending
-  aggregated.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-  
-  // Filter for Overnight (from previous market close at 3:30 PM to today's open)
-  if (category === 'equity') {
-    aggregated = filterOvernightNews(aggregated);
-  } else if (category === 'gas') {
-    aggregated = filterGasSpecificNews(aggregated);
-  }
-
-  // Remove duplicates by title
-  const unique = [];
-  const seenTitles = new Set();
-  for (const item of aggregated) {
-    const normTitle = item.title.toLowerCase().trim();
-    if (!seenTitles.has(normTitle)) {
-      seenTitles.add(normTitle);
-      unique.push(item);
-    }
-  }
-
-  // If no news returned, throw to use fallbacks
-  if (unique.length === 0) {
-    throw new Error("No items returned from feed query");
-  }
-
-  return unique.slice(0, 12); // Limit to top 12 items
+  // Update indicators strip
+  updateGasStatIndicators(RAW_GAS_NEWS);
 }
 
-// Filter Nifty 50 and Bank Nifty news since previous day 3:30 PM
-function filterOvernightNews(items) {
-  const marketCloseTimestamp = getPreviousMarketCloseTimestamp();
+// Dynamic tab boundary partition
+function filterNewsByTab(articles, tab) {
+  const now = new Date();
+  const day = now.getDay();
+  const isWeekend = (day === 0 || day === 6);
   
-  return items.filter(item => {
-    const itemTime = parseFeedDate(item.pubDate).getTime();
-    return itemTime >= marketCloseTimestamp;
-  });
-}
+  if (tab === 'trading') {
+    // Check if we are currently past today's open (9:15 AM)
+    const todayOpen = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 15, 0).getTime();
+    
+    let startTrading, endTrading;
+    if (now.getTime() >= todayOpen && !isWeekend) {
+      startTrading = todayOpen;
+      endTrading = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 30, 0).getTime();
+    } else {
+      // Use previous trading day's range
+      const prevCloseTime = getPreviousMarketCloseTimestamp();
+      const prevCloseDate = new Date(prevCloseTime);
+      startTrading = new Date(prevCloseDate.getFullYear(), prevCloseDate.getMonth(), prevCloseDate.getDate(), 9, 15, 0).getTime();
+      endTrading = prevCloseTime;
+    }
+    
+    const filtered = articles.filter(article => {
+      const t = parseFeedDate(article.pubDate).getTime();
+      return t >= startTrading && t <= endTrading;
+    });
 
-// Parse custom feed date strings to prevent browser date crashes
-function parseFeedDate(dateStr) {
-  if (!dateStr) return new Date();
-  
-  // Check if it is space separated space like "2026-07-15 03:43:47" and lacks 'T'
-  if (typeof dateStr === 'string' && dateStr.includes(' ') && !dateStr.includes('T')) {
-    return new Date(dateStr.replace(' ', 'T'));
+    // If no trading hours news found in bounds, return the most recent 6 articles so the tab is never empty
+    return filtered.length > 0 ? filtered : articles.slice(0, 6);
+  } else {
+    // Overnight (previous close 3:30 PM to today 9:00 AM)
+    const startOvernight = getPreviousMarketCloseTimestamp();
+    const endOvernight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0).getTime();
+    
+    const filtered = articles.filter(article => {
+      const t = parseFeedDate(article.pubDate).getTime();
+      return t >= startOvernight && t <= endOvernight;
+    });
+
+    return filtered.length > 0 ? filtered : articles.slice(0, 6);
   }
-  
-  const parsed = new Date(dateStr);
-  return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 // Helper to find previous trading day's 3:30 PM (15:30) IST closing timestamp
@@ -653,7 +622,6 @@ function getPreviousMarketCloseTimestamp() {
   const now = new Date();
   let checkDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 30, 0);
 
-  // If today is weekend (Saturday or Sunday), go back to Friday close
   if (now.getDay() === 0) { // Sunday
     checkDate.setDate(checkDate.getDate() - 2);
   } else if (now.getDay() === 6) { // Saturday
@@ -661,43 +629,27 @@ function getPreviousMarketCloseTimestamp() {
   } else if (now.getDay() === 1 && now.getHours() < 9) { // Monday before open
     checkDate.setDate(checkDate.getDate() - 3);
   } else if (now.getHours() < 9) { 
-    // If it's a weekday before 9 AM, we want yesterday's market close
     checkDate.setDate(checkDate.getDate() - 1);
   } else if (now > checkDate) {
-    // If it's a weekday and current time is past 3:30 PM, target today's 15:30 PM
     return checkDate.getTime();
   } else {
-    // If it's between 9:00 AM and 3:30 PM today, target yesterday's close
     checkDate.setDate(checkDate.getDate() - 1);
   }
   
   return checkDate.getTime();
 }
 
-// Filter Natural Gas items
-function filterGasSpecificNews(items) {
-  const keywords = ['natural gas', 'gas futures', 'henry hub', 'eia', 'lng', 'weather', 'cold', 'freeze', 'heatwave', 'heating degree', 'cooling degree', 'nord stream', 'pipeline', 'gazprom', 'storage', 'inventory', 'fracking', 'energy stocks', 'drillers'];
-  
-  return items.filter(item => {
-    const text = (item.title + " " + item.description).toLowerCase();
-    const isGasRelated = keywords.some(keyword => text.includes(keyword));
-    
-    if (isGasRelated) {
-      item.type = 'gas';
-      // Identify impact
-      if (text.includes('eia') || text.includes('storage') || text.includes('inventory') || text.includes('jump') || text.includes('surge') || text.includes('plummet')) {
-        item.impact = 'critical';
-      } else if (text.includes('weather') || text.includes('forecast') || text.includes('freeze') || text.includes('colder')) {
-        item.impact = 'high';
-      } else {
-        item.impact = 'medium';
-      }
-    }
-    return isGasRelated;
-  });
+// Parse custom feed date strings to prevent browser date crashes
+function parseFeedDate(dateStr) {
+  if (!dateStr) return new Date();
+  if (typeof dateStr === 'string' && dateStr.includes(' ') && !dateStr.includes('T')) {
+    return new Date(dateStr.replace(' ', 'T'));
+  }
+  const parsed = new Date(dateStr);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-// Render cards showing summaries directly and redirecting to links on click (no modal)
+// Render cards showing summaries directly and redirecting to links on click
 function renderCatalystList(elementId, articles, category, isFallback = false) {
   const container = document.getElementById(elementId);
   container.innerHTML = '';
@@ -716,16 +668,17 @@ function renderCatalystList(elementId, articles, category, isFallback = false) {
     itemDiv.className = `catalyst-item`;
     
     // Add specific border glow styles
-    if (article.impact === 'critical') itemDiv.classList.add('impact-critical');
-    else if (article.impact === 'high') itemDiv.classList.add('impact-high');
-    
-    if (article.type === 'gas') itemDiv.classList.add('type-gas');
+    if (article.impact === 'high') itemDiv.classList.add('impact-critical');
+    if (article.type === 'gas' || category === 'gas') itemDiv.classList.add('type-gas');
 
-    // Humanize publication date
     const timeFormatted = formatRelativeTime(article.pubDate);
-    
-    // Fallback badge if displaying cached/fallback data
     const fallbackHTML = isFallback ? `<span class="fallback-badge">Cached</span>` : '';
+
+    const impactLabel = article.impact === 'high' ? '🔴 High Impact' : '⚪ Low Impact';
+    const impactClass = article.impact === 'high' ? 'high-impact' : 'low-impact';
+
+    const directLabel = article.direct ? '⚡ Direct' : '🌐 Indirect';
+    const directClass = article.direct ? 'direct-impact' : 'indirect-impact';
 
     itemDiv.innerHTML = `
       <div class="catalyst-meta">
@@ -733,12 +686,18 @@ function renderCatalystList(elementId, articles, category, isFallback = false) {
         <span class="catalyst-time">${timeFormatted}</span>
       </div>
       <div class="catalyst-title">${article.title}</div>
-      <div class="catalyst-summary">${article.description}</div>
+      <div class="catalyst-summary">${article.description || 'No description provided.'}</div>
+      <div class="catalyst-tags">
+        <span class="tag-impact ${impactClass}">${impactLabel}</span>
+        <span class="tag-type ${directClass}">${directLabel}</span>
+      </div>
     `;
 
     // Click card to open the external link directly (Original V1 style)
     itemDiv.addEventListener('click', () => {
-      window.open(article.link, '_blank');
+      if (article.link) {
+        window.open(article.link, '_blank');
+      }
     });
 
     container.appendChild(itemDiv);

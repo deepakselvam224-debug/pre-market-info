@@ -50,6 +50,21 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Expose API Endpoint for server-side parsed financial news
+  if (urlPath === '/api/news') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    });
+    getParsedNews().then(news => {
+      res.end(JSON.stringify(news));
+    }).catch(err => {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ error: err.message }));
+    });
+    return;
+  }
+
   // Expose API Endpoint for Live Yahoo Quotes & Strategy Signals (bypasses CORS)
   if (urlPath === '/api/quotes') {
     res.writeHead(200, {
@@ -882,6 +897,165 @@ function sendNtfyNotification(assetName, assetData) {
     } catch (e) {
       console.error("Error reading settings for ntfy.sh notification:", e);
     }
+  });
+}
+
+let newsCache = {
+  equity: [],
+  gas: [],
+  lastUpdated: 0
+};
+
+// Direct server-side RSS fetcher and XML parser to ensure 100% valid links (no cors proxy issues)
+function fetchAndParseRSS(url, category) {
+  return new Promise((resolve) => {
+    const options = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    };
+    https.get(url, options, (res) => {
+      if (res.statusCode !== 200) {
+        return resolve([]);
+      }
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const items = [];
+          const itemRegex = /<item([\s\S]*?)>([\s\S]*?)<\/item>/gi;
+          let match;
+          while ((match = itemRegex.exec(body)) !== null) {
+            const itemContent = match[2];
+            
+            const extractTag = (tag) => {
+              const r = new RegExp(`<${tag}([\\s\\S]*?)>([\\s\\S]*?)<\/${tag}>`, 'i');
+              const m = r.exec(itemContent);
+              if (!m) return '';
+              let val = m[2].trim();
+              if (val.startsWith('<![CDATA[')) {
+                val = val.substring(9, val.length - 3).trim();
+              }
+              return val;
+            };
+
+            const title = extractTag('title');
+            const link = extractTag('link');
+            const pubDate = extractTag('pubDate');
+            let description = extractTag('description');
+            
+            description = description.replace(/<[^>]*>?/gm, ''); // strip html tags
+
+            if (title && link) {
+              let source = "Financial News";
+              if (url.includes("moneycontrol")) source = "Moneycontrol";
+              else if (url.includes("economictimes")) source = "Economic Times";
+              else if (url.includes("google")) {
+                const parts = title.split(' - ');
+                if (parts.length > 1) {
+                  source = parts.pop();
+                } else {
+                  source = "Google News";
+                }
+              }
+
+              const text = (title + " " + description).toLowerCase();
+              let direct = false;
+              let impact = "low";
+
+              if (category === 'equity') {
+                const directKeywords = ['nifty', 'bank nifty', 'nse', 'bse', 'rbi', 'sebi', 'inflation', 'interest rate', 'repo rate', 'earnings', 'reliance', 'hdfc', 'icici', 'infy', 'tcs', 'tata'];
+                const highKeywords = ['rate hike', 'rate cut', 'policy change', 'inflation spikes', 'probe', 'beats estimates', 'net profit jumps', 'crash', 'surge', 'plummet', 'earnings beats'];
+                
+                direct = directKeywords.some(kw => text.includes(kw));
+                const isHigh = highKeywords.some(kw => text.includes(kw));
+                impact = isHigh ? "high" : "low";
+              } else {
+                const directKeywords = ['natural gas', 'gas futures', 'henry hub', 'eia', 'lng', 'weather', 'freeze', 'heatwave', 'storage', 'inventory', 'withdrawal', 'injection'];
+                const highKeywords = ['weather alert', 'colder forecast', 'supply freeze', 'storage jump', 'inventory drop', 'plummet', 'surge', 'shutdown'];
+                
+                direct = directKeywords.some(kw => text.includes(kw));
+                const isHigh = highKeywords.some(kw => text.includes(kw));
+                impact = isHigh ? "high" : "low";
+              }
+
+              items.push({
+                title,
+                link,
+                pubDate,
+                description,
+                source,
+                category,
+                impact,
+                direct
+              });
+            }
+          }
+          resolve(items);
+        } catch (e) {
+          resolve([]);
+        }
+      });
+    }).on('error', () => resolve([]));
+  });
+}
+
+function getParsedNews() {
+  const now = Date.now();
+  if (now - newsCache.lastUpdated < 120000 && newsCache.equity.length > 0) {
+    return Promise.resolve(newsCache);
+  }
+
+  const eqFeeds = [
+    'https://www.moneycontrol.com/rss/marketnews.xml',
+    'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms',
+    'https://news.google.com/rss/search?q=Nifty+50+OR+Bank+Nifty+OR+SEBI+market+when:1d&hl=en-IN&gl=IN&ceid=IN:en'
+  ];
+
+  const gasFeeds = [
+    'https://news.google.com/rss/search?q=Natural+Gas+OR+Henry+Hub+OR+LNG+energy+when:2d&hl=en-US&gl=US&ceid=US:en'
+  ];
+
+  const fetchesEq = eqFeeds.map(url => fetchAndParseRSS(url, 'equity'));
+  const fetchesGas = gasFeeds.map(url => fetchAndParseRSS(url, 'gas'));
+
+  return Promise.all([
+    Promise.all(fetchesEq),
+    Promise.all(fetchesGas)
+  ]).then(([eqResults, gasResults]) => {
+    let eqNews = [];
+    eqResults.forEach(res => { eqNews = eqNews.concat(res); });
+    
+    let gasNews = [];
+    gasResults.forEach(res => { gasNews = gasNews.concat(res); });
+
+    const uniqueEq = [];
+    const seenEq = new Set();
+    eqNews.forEach(item => {
+      const titleNorm = item.title.toLowerCase().trim();
+      if (!seenEq.has(titleNorm)) {
+        seenEq.add(titleNorm);
+        uniqueEq.push(item);
+      }
+    });
+
+    const uniqueGas = [];
+    const seenGas = new Set();
+    gasNews.forEach(item => {
+      const titleNorm = item.title.toLowerCase().trim();
+      if (!seenGas.has(titleNorm)) {
+        seenGas.add(titleNorm);
+        uniqueGas.push(item);
+      }
+    });
+
+    newsCache = {
+      equity: uniqueEq,
+      gas: uniqueGas,
+      lastUpdated: now
+    };
+
+    return newsCache;
   });
 }
 

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=13.0">
+  <link rel="stylesheet" href="styles.css?v=14.0">
   <!-- TradingView Widget Script Loader -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 </head>
@@ -215,6 +215,10 @@
           <div class="feed-status" id="eq-feed-time">Syncing...</div>
         </div>
 
+        <div class="news-tabs-container">
+          <button class="news-tab active" id="tab-eq-overnight" onclick="switchEqNewsTab('overnight')">Overnight (3:30 PM - 9:00 AM)</button>
+          <button class="news-tab" id="tab-eq-trading" onclick="switchEqNewsTab('trading')">Trading Hours (9:15 AM - 3:30 PM)</button>
+        </div>
         <div class="catalyst-list" id="eq-news-list">
           <div class="loading-state">
             <div class="spinner"></div>
@@ -339,6 +343,10 @@
           </div>
         </div>
 
+        <div class="news-tabs-container">
+          <button class="news-tab active" id="tab-gas-overnight" onclick="switchGasNewsTab('overnight')">Overnight Catalysts</button>
+          <button class="news-tab" id="tab-gas-trading" onclick="switchGasNewsTab('trading')">Trading Hours News</button>
+        </div>
         <div class="catalyst-list" id="gas-news-list">
           <div class="loading-state">
             <div class="spinner"></div>
@@ -560,6 +568,6 @@
   </main>
 
   <!-- Application JS Code -->
-  <script src="app.js?v=13.0"></script>
+  <script src="app.js?v=14.0"></script>
 </body>
 </html>
