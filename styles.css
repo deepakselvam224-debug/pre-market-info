@@ -1645,69 +1645,140 @@ input:checked + .slider:before {
 
 /* Light Theme Variables and Element Styles */
 body.light-theme {
-  --bg-main: #f0f2f5;
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --border-color: rgba(0, 0, 0, 0.08);
-  --border-glow-eq: rgba(16, 185, 129, 0.15);
-  --border-glow-cmd: rgba(6, 182, 212, 0.15);
-  --text-primary: #111827;
-  --text-muted: #4b5563;
-  --text-dark: #8b949e;
+  --bg-main: #f0f2f5 !important;
+  --bg-card: rgba(255, 255, 255, 0.9) !important;
+  --border-color: rgba(0, 0, 0, 0.08) !important;
+  --border-glow-eq: rgba(16, 185, 129, 0.15) !important;
+  --border-glow-cmd: rgba(6, 182, 212, 0.15) !important;
+  --text-primary: #111827 !important;
+  --text-muted: #4b5563 !important;
+  --text-dark: #8b949e !important;
   
-  --bullish-glow: rgba(16, 185, 129, 0.08);
-  --bearish-glow: rgba(239, 68, 68, 0.08);
-  --gas-cyan-glow: rgba(6, 182, 212, 0.08);
+  --bullish-glow: rgba(16, 185, 129, 0.08) !important;
+  --bearish-glow: rgba(239, 68, 68, 0.08) !important;
+  --gas-cyan-glow: rgba(6, 182, 212, 0.08) !important;
 }
 
-/* Light Theme Component Overrides */
-body.light-theme .section-card,
-body.light-theme .news-container,
-body.light-theme .sentiment-gauge-container,
-body.light-theme .cpr-banner,
-body.light-theme .timer-box,
-body.light-theme .checklist-item,
-body.light-theme .notes-textarea {
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+/* Force light backgrounds on core body wrapper and grid layout */
+body.light-theme {
+  background-color: #f0f2f5 !important;
+  color: #111827 !important;
 }
 
-body.light-theme .section-card {
+body.light-theme .app-header {
   background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-body.light-theme .timer-box {
+body.light-theme .ticker-tape-section,
+body.light-theme .custom-ticker-tape {
+  background: #f9fafb !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .market-timeline-container {
   background: rgba(0, 0, 0, 0.03) !important;
-  border-color: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-theme .sentiment-gauge-container {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Header Text elements visibility */
+body.light-theme .logo-text h1 {
+  color: #111827 !important;
+}
+
+body.light-theme .logo-text h1 span {
+  color: #10b981 !important;
+}
+
+body.light-theme .logo-text .tagline {
+  color: #4b5563 !important;
+}
+
+body.light-theme #market-status-text {
+  color: #111827 !important;
+}
+
+body.light-theme .timeline-status {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #111827 !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-theme .timer-label {
+  color: #4b5563 !important;
 }
 
 body.light-theme .timer-value {
   color: #111827 !important;
 }
 
-body.light-theme .live-clock-container {
-  background: rgba(0, 0, 0, 0.03) !important;
-  border-color: rgba(0, 0, 0, 0.05) !important;
+body.light-theme .clock-label {
+  color: #4b5563 !important;
 }
 
 body.light-theme .clock-time {
+  color: #0d9488 !important; /* Teal green clock in light mode */
+  text-shadow: none !important;
+}
+
+body.light-theme .clock-date {
+  color: #4b5563 !important;
+}
+
+/* Ticker ribbon text elements */
+body.light-theme .t-name {
+  color: #4b5563 !important;
+}
+
+body.light-theme .t-price {
   color: #111827 !important;
 }
 
-body.light-theme .sentiment-gauge-container {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.06) !important;
+body.light-theme .ticker-divider {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Sentiment Card texts */
+body.light-theme .gauge-label {
+  color: #4b5563 !important;
 }
 
 body.light-theme #sentiment-score-text {
   color: #111827 !important;
 }
 
-body.light-theme .bulletin-item {
-  color: #1f2937 !important;
+body.light-theme .gauge-scale span {
+  color: #4b5563 !important;
 }
 
 body.light-theme .bulletin-divider {
   background: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .bulletin-item {
+  color: #1f2937 !important;
+}
+
+/* Card details adjustments */
+body.light-theme .section-card {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .section-card:hover {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .card-header {
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 body.light-theme .index-card-title h2,
@@ -1717,14 +1788,32 @@ body.light-theme .card-header h3 {
 
 body.light-theme .index-live-price {
   color: #111827 !important;
+  text-shadow: none !important;
 }
 
-body.light-theme .cpr-value {
-  color: #1f2937 !important;
+body.light-theme .index-card-range {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .range-label {
+  color: #4b5563 !important;
+}
+
+body.light-theme .range-val {
+  color: #111827 !important;
+}
+
+body.light-theme .range-divider {
+  background: rgba(0, 0, 0, 0.08) !important;
 }
 
 body.light-theme .cpr-label {
   color: #4b5563 !important;
+}
+
+body.light-theme .cpr-value {
+  color: #111827 !important;
 }
 
 body.light-theme .strat-label {
@@ -1739,13 +1828,32 @@ body.light-theme .cpr-wider {
   background: rgba(245, 158, 11, 0.08) !important;
 }
 
+/* Strategic Notes overrides */
+body.light-theme .notes-textarea {
+  background: #f9fafb !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #111827 !important;
+}
+
+body.light-theme .template-btn.secondary {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: #4b5563 !important;
+}
+
+body.light-theme .template-btn.secondary:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #111827 !important;
+}
+
+/* News Container elements */
 body.light-theme .news-card {
-  background: rgba(0, 0, 0, 0.02) !important;
+  background: #f9fafb !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 body.light-theme .news-card:hover {
-  background: rgba(0, 0, 0, 0.04) !important;
+  background: #f3f4f6 !important;
   border-color: rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -1757,29 +1865,34 @@ body.light-theme .news-title:hover {
   color: #10b981 !important;
 }
 
-body.light-theme .news-tab-btn {
-  background: rgba(0, 0, 0, 0.03) !important;
-  color: #4b5563 !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-body.light-theme .news-tab-btn.active {
-  background: #111827 !important;
-  color: #ffffff !important;
-}
-
 body.light-theme .news-meta {
-  color: #6b7280 !important;
+  color: #4b5563 !important;
 }
 
-body.light-theme .notes-textarea {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
+body.light-theme .news-tabs-container {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-theme .news-tab {
+  color: #4b5563 !important;
+}
+
+body.light-theme .news-tab:hover {
   color: #111827 !important;
+  background: rgba(0, 0, 0, 0.04) !important;
 }
 
+body.light-theme .news-tab.active {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Checklist components */
 body.light-theme .checklist-item {
-  border-color: rgba(0, 0, 0, 0.05) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.05) !important;
 }
 
 body.light-theme .checklist-item span {
@@ -1790,8 +1903,9 @@ body.light-theme .checklist-item.checked span {
   color: #9ca3af !important;
 }
 
+/* Economic calendar list */
 body.light-theme .event-item {
-  border-color: rgba(0, 0, 0, 0.05) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.05) !important;
 }
 
 body.light-theme .event-title {
@@ -1804,8 +1918,9 @@ body.light-theme .event-countdown-badge {
   border-color: rgba(0, 0, 0, 0.06) !important;
 }
 
+/* Daily Signal Log table overrides */
 body.light-theme .trade-log-table th {
-  background: rgba(0, 0, 0, 0.03) !important;
+  background: rgba(0, 0, 0, 0.02) !important;
   color: #4b5563 !important;
   border-bottom-color: rgba(0, 0, 0, 0.08) !important;
 }
@@ -1816,19 +1931,44 @@ body.light-theme .trade-log-table td {
 }
 
 body.light-theme .trade-log-table tr:hover {
-  background: rgba(0, 0, 0, 0.02) !important;
+  background: rgba(0, 0, 0, 0.01) !important;
 }
 
-body.light-theme .logo-text h1 {
+/* UI details styling */
+body.light-theme .stat-box {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .stat-val {
   color: #111827 !important;
 }
 
-body.light-theme .logo-text h1 span {
-  color: #10b981 !important;
+body.light-theme .chart-selector {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light-theme .chart-btn {
+  color: #4b5563 !important;
+}
+
+body.light-theme .chart-btn:hover {
+  color: #111827 !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light-theme .chart-btn.active {
+  background: #ffffff !important;
+  color: #111827 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
 }
 
 body.light-theme ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15) !important;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25) !important;
 }
 
 /* Theme Toggle Button Styling */
@@ -1853,11 +1993,11 @@ body.light-theme ::-webkit-scrollbar-thumb {
 }
 
 body.light-theme .theme-toggle-btn {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: #111827;
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #111827 !important;
 }
 
 body.light-theme .theme-toggle-btn:hover {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.08) !important;
 }
