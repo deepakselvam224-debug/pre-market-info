@@ -138,6 +138,9 @@ const server = http.createServer((req, res) => {
       if (convertedGas) checkAndSendWhatsApp('gas', 'MCX NATURAL GAS', convertedGas);
       if (eth) checkAndSendWhatsApp('eth', 'ETHEREUM (ETH/USD)', eth);
 
+      // Process trade logger updates
+      updateTradeLog(nifty, banknifty, convertedGas, eth);
+
       const data = {
         nifty,
         banknifty,
@@ -152,7 +155,8 @@ const server = http.createServer((req, res) => {
           change: spx.change || 0,
           changePercent: spx.changePercent || 0
         },
-        eth
+        eth,
+        tradeLog
       };
       
       res.end(JSON.stringify(data));
@@ -1056,6 +1060,67 @@ function getParsedNews() {
     };
 
     return newsCache;
+  });
+}
+
+// Server-side Trade Log store & Price checking engine
+let tradeLog = [];
+
+function updateTradeLog(nifty, banknifty, gas, eth) {
+  const checkLogTrigger = (id, name, data) => {
+    if (!data || !data.strategy) return;
+    const s = data.strategy;
+    if (s.state === 'LONG_TRIGGERED' || s.state === 'SHORT_TRIGGERED') {
+      const tradeId = `${id}_${s.signalType}_${s.entry.toFixed(1)}`;
+      const exists = tradeLog.some(t => t.tradeId === tradeId);
+      if (!exists) {
+        tradeLog.push({
+          tradeId,
+          time: new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }),
+          asset: name,
+          setup: s.setupType ? `Setup ${s.setupType}` : 'VWAP Retest',
+          direction: s.signalType,
+          entry: s.entry,
+          target: s.target,
+          sl: s.sl,
+          status: 'Active'
+        });
+      }
+    }
+  };
+
+  checkLogTrigger('nifty', 'NIFTY 50', nifty);
+  checkLogTrigger('banknifty', 'BANK NIFTY', banknifty);
+  checkLogTrigger('gas', 'MCX NATURAL GAS', gas);
+  checkLogTrigger('eth', 'ETH/USD', eth);
+
+  const getAssetPrice = (name) => {
+    if (name === 'NIFTY 50' && nifty) return nifty.price;
+    if (name === 'BANK NIFTY' && banknifty) return banknifty.price;
+    if (name === 'MCX NATURAL GAS' && gas) return gas.price;
+    if (name === 'ETH/USD' && eth) return eth.price;
+    return null;
+  };
+
+  tradeLog.forEach(t => {
+    if (t.status === 'Active') {
+      const price = getAssetPrice(t.asset);
+      if (price !== null) {
+        if (t.direction === 'LONG') {
+          if (t.target && price >= t.target) {
+            t.status = 'Target Hit 🟢';
+          } else if (t.sl && price <= t.sl) {
+            t.status = 'SL Hit 🔴';
+          }
+        } else if (t.direction === 'SHORT') {
+          if (t.target && price <= t.target) {
+            t.status = 'Target Hit 🟢';
+          } else if (t.sl && price >= t.sl) {
+            t.status = 'SL Hit 🔴';
+          }
+        }
+      }
+    }
   });
 }
 

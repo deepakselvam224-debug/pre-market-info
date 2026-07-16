@@ -127,9 +127,99 @@ async function fetchLiveQuotes() {
     updateTickerItem('usdinr', data.usdinr);
     updateTickerItem('spx', data.spx);
     
+    // Update Market Sentiment Speedometer
+    updateSentimentGauge(data);
+
+    // Update Daily Strategy Signal History Log table
+    updateTradeLogTable(data.tradeLog);
+
   } catch (error) {
     console.error("Quotes poller failed:", error);
   }
+}
+
+function updateSentimentGauge(data) {
+  if (!data) return;
+  
+  const niftyChg = data.nifty ? data.nifty.changePercent : 0;
+  const bankChg = data.banknifty ? data.banknifty.changePercent : 0;
+  const spxChg = data.spx ? data.spx.changePercent : 0;
+  const usdinrChg = data.usdinr ? data.usdinr.changePercent : 0;
+
+  // Sentiment calculation: aggregate weighted changes
+  let score = (niftyChg * 40) + (bankChg * 40) + (spxChg * 30) - (usdinrChg * 50);
+  score = Math.max(-100, Math.min(100, score));
+
+  // Needle position is 0% to 100% (50% is Neutral)
+  const needleLeft = 50 + (score / 2);
+  const needleEl = document.getElementById('sentiment-needle');
+  if (needleEl) {
+    needleEl.style.left = `${needleLeft}%`;
+  }
+
+  let ratingText = "NEUTRAL";
+  if (score > 60) ratingText = "STRONG BULLISH 🔥";
+  else if (score > 15) ratingText = "BULLISH 🟢";
+  else if (score < -60) ratingText = "STRONG BEARISH ⚡";
+  else if (score < -15) ratingText = "BEARISH 🔴";
+  
+  const labelEl = document.getElementById('sentiment-score-text');
+  if (labelEl) {
+    const formattedScore = score >= 0 ? `+${score.toFixed(0)}` : score.toFixed(0);
+    labelEl.textContent = `${ratingText} (${formattedScore}%)`;
+  }
+}
+
+function updateTradeLogTable(tradeLog) {
+  const tbody = document.getElementById('trade-log-tbody');
+  const countEl = document.getElementById('log-count');
+  
+  if (!tbody) return;
+  
+  if (!tradeLog || tradeLog.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="no-trades-msg">No strategy signals triggered in today's session.</td>
+      </tr>
+    `;
+    if (countEl) countEl.textContent = "0 Trade(s) Logged";
+    return;
+  }
+
+  if (countEl) countEl.textContent = `${tradeLog.length} Trade(s) Logged`;
+
+  tbody.innerHTML = '';
+  
+  // Render trades from newest to oldest
+  tradeLog.slice().reverse().forEach(t => {
+    const tr = document.createElement('tr');
+    
+    // Status formatting
+    let statusClass = "status-log-active";
+    if (t.status.includes("Hit 🟢")) statusClass = "status-log-profit";
+    else if (t.status.includes("Hit 🔴")) statusClass = "status-log-sl";
+    
+    const directionBadge = t.direction === 'LONG' 
+      ? '<span style="color: #4ade80; font-weight: 700;">🟢 BUY</span>' 
+      : '<span style="color: #f87171; font-weight: 700;">🔴 SELL</span>';
+
+    const isGas = t.asset.includes("NATURAL GAS");
+    const isEth = t.asset.includes("ETH");
+    const formatVal = (v) => formatIndexPrice(v, (isGas || isEth));
+
+    tr.innerHTML = `
+      <td>${t.time}</td>
+      <td style="font-weight: 700; color: #ffffff;">${t.asset}</td>
+      <td>${t.setup}</td>
+      <td>${directionBadge}</td>
+      <td style="font-weight: 700;">${formatVal(t.entry)}</td>
+      <td style="color: #34d399;">${formatVal(t.target)}</td>
+      <td style="color: #f87171;">${formatVal(t.sl)}</td>
+      <td class="${statusClass}">${t.status}</td>
+    `;
+    
+    tbody.appendChild(tr);
+  });
 }
 
 function updateIndexCard(id, indexData) {
