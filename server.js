@@ -323,8 +323,238 @@ function calculateCPR(hlc) {
   return { tc, p, bc, r1, s1, r2, s2, r3, s3 };
 }
 
+// Calculate Strategy 1 (Indices: Nifty & Bank Nifty)
+function calculateStrategy1(chartResult, cpr) {
+  if (!chartResult || !chartResult.indicators || !chartResult.indicators.quote || !cpr) {
+    return { state: "NEUTRAL", swingHigh: null, swingLow: null, entry: null, sl: null, target: null, setupType: null, signalType: null, cprText: null };
+  }
+
+  const quote = chartResult.indicators.quote[0];
+  const highs = quote.high || [];
+  const lows = quote.low || [];
+  const closes = quote.close || [];
+
+  // Determine CPR Width Text
+  const cprWidth = Math.abs(cpr.tc - cpr.bc);
+  const cprText = cprWidth < 35 
+    ? "Narrow CPR: Big Momentum Market expected (One-sided Trend)"
+    : "Wider CPR: Volatile / Sideways Market expected";
+
+  // Track state machine variables
+  let state = "NEUTRAL"; // "NEUTRAL", "LONG_MOMENTUM", "LONG_RETEST", "LONG_TRIGGERED", "NO_TRADE_ZONE"
+  let setupType = null;  // 1, 2, or 3
+  let swingHigh = null;
+  let swingLow = null;
+  let entry = null;
+  let sl = null;
+  let target = null;
+  let signalType = null;
+
+  let legHighs = [];
+  let legLows = [];
+
+  const cprMin = Math.min(cpr.tc, cpr.bc);
+  const cprMax = Math.max(cpr.tc, cpr.bc);
+
+  for (let i = 0; i < closes.length; i++) {
+    const c = closes[i];
+    const h = highs[i];
+    const l = lows[i];
+
+    if (c === null || h === null || l === null) continue;
+
+    // Rule: If price is inside CPR, it's a No Trade Zone!
+    if (c > cprMin && c < cprMax) {
+      state = "NO_TRADE_ZONE";
+      setupType = null;
+      swingHigh = null;
+      swingLow = null;
+      entry = null;
+      sl = null;
+      target = null;
+      signalType = null;
+      continue;
+    }
+
+    // If state was NO_TRADE_ZONE and price exits CPR, it resets to NEUTRAL
+    if (state === "NO_TRADE_ZONE") {
+      state = "NEUTRAL";
+    }
+
+    if (state === "NEUTRAL") {
+      // Check crossovers to start setups
+      if (c > cprMax) {
+        if (c > cpr.r1) {
+          state = "LONG_MOMENTUM";
+          setupType = 3; // Setup 3 (Above R1 breakout)
+          legHighs = [h];
+          swingHigh = h;
+        } else {
+          state = "LONG_MOMENTUM";
+          setupType = 1; // Setup 1 (Above CPR breakout)
+          legHighs = [h];
+          swingHigh = h;
+        }
+      } else if (c < cprMin) {
+        if (c < cpr.s1) {
+          state = "SHORT_MOMENTUM";
+          setupType = 3; // Setup 3 (Below S1 breakdown)
+          legLows = [l];
+          swingLow = l;
+        } else {
+          state = "SHORT_MOMENTUM";
+          setupType = 1; // Setup 1 (Below CPR breakdown)
+          legLows = [l];
+          swingLow = l;
+        }
+      }
+      
+      // Setup 2 Candidates (S1/R1 reversals)
+      // Long setup 2: trading below CPR, touches S1 (low <= S1) and closes above it
+      if (c < cprMin && l <= cpr.s1 && c > cpr.s1) {
+        state = "LONG_MOMENTUM";
+        setupType = 2;
+        legHighs = [h];
+        swingHigh = h;
+      }
+      // Short setup 2: trading above CPR, touches R1 (high >= R1) and closes below it
+      else if (c > cprMax && h >= cpr.r1 && c < cpr.r1) {
+        state = "SHORT_MOMENTUM";
+        setupType = 2;
+        legLows = [l];
+        swingLow = l;
+      }
+    }
+
+    // Auto-direction shift / Stop Out logic:
+    if (state.startsWith("LONG")) {
+      if (c < cprMin) {
+        state = "SHORT_MOMENTUM";
+        setupType = 1; 
+        legLows = [l];
+        swingLow = l;
+        swingHigh = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+      }
+    } else if (state.startsWith("SHORT")) {
+      if (c > cprMax) {
+        state = "LONG_MOMENTUM";
+        setupType = 1; 
+        legHighs = [h];
+        swingHigh = h;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+      }
+    }
+
+    // Process Momentum & Retest steps for each setup
+    if (state === "LONG_MOMENTUM") {
+      legHighs.push(h);
+      swingHigh = Math.max(...legHighs);
+
+      // Check for Retest
+      if (setupType === 1) {
+        // Touch Top CPR Line (TC)
+        if (l <= cprMax && c >= cprMax) {
+          state = "LONG_RETEST";
+        }
+      } else if (setupType === 2) {
+        // Touch S1
+        if (l <= cpr.s1 && c >= cpr.s1) {
+          state = "LONG_RETEST";
+        }
+      } else if (setupType === 3) {
+        // Touch R1
+        if (l <= cpr.r1 && c >= cpr.r1) {
+          state = "LONG_RETEST";
+        }
+      }
+    } else if (state === "LONG_RETEST") {
+      legHighs.push(h);
+      swingHigh = Math.max(...legHighs);
+
+      // Check for breakout to Trigger
+      if (c > swingHigh) {
+        state = "LONG_TRIGGERED";
+        entry = swingHigh;
+        if (setupType === 1) {
+          sl = cprMax;
+          target = cpr.r1 > entry ? cpr.r1 : (cpr.r2 > entry ? cpr.r2 : cpr.r3);
+        } else if (setupType === 2) {
+          sl = cpr.s1;
+          target = cprMin; // BC
+        } else if (setupType === 3) {
+          sl = cpr.r1;
+          target = cpr.r2 > entry ? cpr.r2 : cpr.r3;
+        }
+        signalType = "LONG";
+      }
+    } else if (state === "SHORT_MOMENTUM") {
+      legLows.push(l);
+      swingLow = Math.min(...legLows);
+
+      // Check for Retest
+      if (setupType === 1) {
+        // Touch Bottom CPR Line (BC)
+        if (h >= cprMin && c <= cprMin) {
+          state = "SHORT_RETEST";
+        }
+      } else if (setupType === 2) {
+        // Touch R1
+        if (h >= cpr.r1 && c <= cpr.r1) {
+          state = "SHORT_RETEST";
+        }
+      } else if (setupType === 3) {
+        // Touch S1
+        if (h >= cpr.s1 && c <= cpr.s1) {
+          state = "SHORT_RETEST";
+        }
+      }
+    } else if (state === "SHORT_RETEST") {
+      legLows.push(l);
+      swingLow = Math.min(...legLows);
+
+      // Check for breakdown to Trigger
+      if (c < swingLow) {
+        state = "SHORT_TRIGGERED";
+        entry = swingLow;
+        if (setupType === 1) {
+          sl = cprMin;
+          target = cpr.s1 < entry ? cpr.s1 : (cpr.s2 < entry ? cpr.s2 : cpr.s3);
+        } else if (setupType === 2) {
+          sl = cpr.r1;
+          target = cprMax; // TC
+        } else if (setupType === 3) {
+          sl = cpr.s1;
+          target = cpr.s2 < entry ? cpr.s2 : cpr.s3;
+        }
+        signalType = "SHORT";
+      }
+    }
+  }
+
+  return {
+    state,
+    swingHigh,
+    swingLow,
+    entry,
+    sl,
+    target,
+    setupType,
+    signalType,
+    cprText,
+    currentVwap: null
+  };
+}
+
 // Calculate VWAP & Track Strategy Setup State Machine
-function calculateVWAPAndStrategy(chartResult, cpr) {
+function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
   if (!chartResult || !chartResult.indicators || !chartResult.indicators.quote) {
     return { state: "NEUTRAL", swingHigh: null, swingLow: null, entry: null, sl: null, target: null, currentVwap: null };
   }
@@ -411,13 +641,23 @@ function calculateVWAPAndStrategy(chartResult, cpr) {
       legHighs.push(h);
       swingHigh = Math.max(...legHighs);
       
-      // Retest criteria: price pulls back near VWAP (but stays above it).
-      // Let's say if price pulls back to within 35% of the distance between swingHigh and VWAP
-      const threshold = vwap + (swingHigh - vwap) * 0.35;
-      if (c <= threshold) {
-        state = "LONG_RETEST";
+      if (isCommodityCrypto) {
+        // Confirmation 3 (Retest): Low must touch or cross below VWAP, but close remains on/above it
+        if (l <= vwap && c >= vwap) {
+          state = "LONG_RETEST";
+        }
+      } else {
+        // Pullback threshold: price pulls back to within 35% of the distance between swingHigh and VWAP
+        const threshold = vwap + (swingHigh - vwap) * 0.35;
+        if (c <= threshold) {
+          state = "LONG_RETEST";
+        }
       }
     } else if (state === "LONG_RETEST") {
+      // If price goes up and makes a new high without breakout close, track it
+      legHighs.push(h);
+      swingHigh = Math.max(...legHighs);
+
       // Waiting for breakout above swingHigh
       if (c > swingHigh) {
         state = "LONG_TRIGGERED";
@@ -430,13 +670,23 @@ function calculateVWAPAndStrategy(chartResult, cpr) {
       legLows.push(l);
       swingLow = Math.min(...legLows);
       
-      // Retest criteria: price pulls back near VWAP (but stays below it).
-      // Let's say if price pulls back to within 35% of the distance between VWAP and swingLow
-      const threshold = vwap - (vwap - swingLow) * 0.35;
-      if (c >= threshold) {
-        state = "SHORT_RETEST";
+      if (isCommodityCrypto) {
+        // Confirmation 3 (Retest): High must touch or cross above VWAP, but close remains on/below it
+        if (h >= vwap && c <= vwap) {
+          state = "SHORT_RETEST";
+        }
+      } else {
+        // Pullback threshold: price pulls back to within 35% of the distance between VWAP and swingLow
+        const threshold = vwap - (vwap - swingLow) * 0.35;
+        if (c >= threshold) {
+          state = "SHORT_RETEST";
+        }
       }
     } else if (state === "SHORT_RETEST") {
+      // If price goes down and makes a new low without breakdown close, track it
+      legLows.push(l);
+      swingLow = Math.min(...legLows);
+
       // Waiting for breakdown below swingLow
       if (c < swingLow) {
         state = "SHORT_TRIGGERED";
@@ -475,7 +725,10 @@ function getAssetAnalysis(symbol) {
     const changePercent = (change / prevClose) * 100;
     
     const cpr = hlc ? calculateCPR(hlc) : null;
-    const strategy = calculateVWAPAndStrategy(intradayResult.chart.result[0], cpr);
+    const isCommodityCrypto = (symbol === 'NG=F' || symbol === 'ETH-USD');
+    const strategy = isCommodityCrypto
+      ? calculateVWAPAndStrategy(intradayResult.chart.result[0], cpr, true)
+      : calculateStrategy1(intradayResult.chart.result[0], cpr);
     
     return {
       price,
@@ -540,10 +793,11 @@ function sendWhatsAppNotification(id, assetName, assetData) {
       const slFormatted = formatPrice(s.sl);
       const targetFormatted = formatPrice(s.target);
       
+      const setupSuffix = s.setupType ? ` (Setup ${s.setupType})` : '';
       const alertEmoji = direction === 'LONG' ? '🟢' : '🔴';
       const msg = `🚨 *PRE-MARKET STRATEGY ALERT* 🚨\n\n` +
                   `*Asset:* ${assetName}\n` +
-                  `*Signal:* ${alertEmoji} *${direction} ENTRY*\n` +
+                  `*Signal:* ${alertEmoji} *${direction} ENTRY${setupSuffix}*\n` +
                   `*Entry Price:* ${entryFormatted}\n` +
                   `*Stop Loss:* ${slFormatted}\n` +
                   `*Target:* ${targetFormatted}\n` +
@@ -595,7 +849,8 @@ function sendNtfyNotification(assetName, assetData) {
       const slFormatted = formatPrice(s.sl);
       const targetFormatted = formatPrice(s.target);
       
-      const msg = `${assetName}: ${direction} Entry Triggered!\n` +
+      const setupSuffix = s.setupType ? ` (Setup ${s.setupType})` : '';
+      const msg = `${assetName}: ${direction} Entry Triggered!${setupSuffix}\n` +
                   `Entry Price: ${entryFormatted}\n` +
                   `Stop Loss: ${slFormatted}\n` +
                   `Target: ${targetFormatted}`;

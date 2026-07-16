@@ -1329,3 +1329,26 @@ input:checked + .slider:before {
   display: grid;
   grid-template-columns: 1fr;
 }
+
+/* CPR width banners */
+.cpr-banner {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.35rem 0.55rem;
+  border-radius: 4px;
+  margin-bottom: 0.65rem;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.cpr-narrow {
+  background: rgba(16, 185, 129, 0.08); /* Transparent Emerald */
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.cpr-wider {
+  background: rgba(245, 158, 11, 0.08); /* Transparent Amber */
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}

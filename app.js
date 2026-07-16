@@ -200,44 +200,93 @@ function updateIndexCard(id, indexData) {
   // Update Strategy State Display
   const stratStateEl = document.getElementById(`${id}-strat-state`);
   const stratDetailsEl = document.getElementById(`${id}-strat-details`);
+  const cprBannerEl = document.getElementById(`${id}-cpr-banner`);
+
+  if (cprBannerEl) {
+    if (indexData.strategy && indexData.strategy.cprText) {
+      cprBannerEl.style.display = "block";
+      cprBannerEl.textContent = indexData.strategy.cprText;
+      if (indexData.strategy.cprText.includes("Narrow")) {
+        cprBannerEl.className = "cpr-banner cpr-narrow";
+      } else {
+        cprBannerEl.className = "cpr-banner cpr-wider";
+      }
+    } else {
+      cprBannerEl.style.display = "none";
+    }
+  }
+
   if (stratStateEl && stratDetailsEl && indexData.strategy) {
     const s = indexData.strategy;
     const stateStr = s.state;
     const isGas = (id === 'gas');
     const isEth = (id === 'eth');
+    const isIndices = (id === 'nifty' || id === 'banknifty');
     const formatVal = (v) => formatIndexPrice(v, (isGas || isEth));
 
     let stateClass = "status-neutral";
     let stateText = "NEUTRAL";
     let detailsHtml = "";
 
-    if (stateStr === "NEUTRAL") {
+    const setupSuffix = s.setupType ? ` (Setup ${s.setupType})` : '';
+
+    if (stateStr === "NO_TRADE_ZONE") {
+      stateClass = "status-neutral";
+      stateText = "NO TRADE ZONE";
+      detailsHtml = `<span style="color: #ef4444; font-weight: 700;">Inside CPR boundary</span><br><span>No trades allowed inside this zone.</span>`;
+    } else if (stateStr === "NEUTRAL") {
       stateClass = "status-neutral";
       stateText = "NEUTRAL";
-      detailsHtml = `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Waiting for price momentum...</span>`;
+      detailsHtml = isIndices
+        ? `<span>Waiting for CPR breakout or reversal...</span>`
+        : `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Waiting for price momentum...</span>`;
     } else if (stateStr === "LONG_MOMENTUM") {
       stateClass = "status-momentum";
-      stateText = "MOMENTUM (UP)";
-      detailsHtml = `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Leg High: ${formatVal(s.swingHigh)}</span><br><span>Tracking leg swing high...</span>`;
+      stateText = `MOMENTUM (UP)${setupSuffix}`;
+      detailsHtml = isIndices
+        ? `<span>Leg High: ${formatVal(s.swingHigh)}</span><br><span>Tracking leg swing high...</span>`
+        : `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Leg High: ${formatVal(s.swingHigh)}</span><br><span>Tracking leg swing high...</span>`;
     } else if (stateStr === "LONG_RETEST") {
       stateClass = "status-retest";
-      stateText = "RETESTING VWAP";
-      detailsHtml = `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Swing High: ${formatVal(s.swingHigh)}</span><br><span style="color: #facc15;">Wait for breakout above Swing High</span>`;
+      stateText = isIndices ? `RETESTING${setupSuffix}` : "RETESTING VWAP";
+      
+      let lineLabel = "VWAP";
+      if (isIndices) {
+        if (s.setupType === 1) lineLabel = "CPR Top (TC)";
+        else if (s.setupType === 2) lineLabel = "Support 1 (S1)";
+        else if (s.setupType === 3) lineLabel = "Resistance 1 (R1)";
+      }
+      
+      detailsHtml = isIndices
+        ? `<span>Retest Bound: ${lineLabel}</span><br><span>Swing High: ${formatVal(s.swingHigh)}</span><br><span style="color: #facc15;">Wait for breakout above Swing High</span>`
+        : `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Swing High: ${formatVal(s.swingHigh)}</span><br><span style="color: #facc15;">Wait for breakout above Swing High</span>`;
     } else if (stateStr === "LONG_TRIGGERED") {
       stateClass = "status-triggered-long";
-      stateText = "LONG ENTRY";
+      stateText = `LONG ENTRY${setupSuffix}`;
       detailsHtml = `<span style="color: #4ade80; font-weight: 700;">🚨 ENTRY TAKEN</span><br><span>Entry: ${formatVal(s.entry)}</span><br><span>SL: ${formatVal(s.sl)}</span><br><span>Target: ${formatVal(s.target)}</span>`;
     } else if (stateStr === "SHORT_MOMENTUM") {
       stateClass = "status-momentum";
-      stateText = "MOMENTUM (DN)";
-      detailsHtml = `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Leg Low: ${formatVal(s.swingLow)}</span><br><span>Tracking leg swing low...</span>`;
+      stateText = `MOMENTUM (DN)${setupSuffix}`;
+      detailsHtml = isIndices
+        ? `<span>Leg Low: ${formatVal(s.swingLow)}</span><br><span>Tracking leg swing low...</span>`
+        : `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Leg Low: ${formatVal(s.swingLow)}</span><br><span>Tracking leg swing low...</span>`;
     } else if (stateStr === "SHORT_RETEST") {
       stateClass = "status-retest";
-      stateText = "RETESTING VWAP";
-      detailsHtml = `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Swing Low: ${formatVal(s.swingLow)}</span><br><span style="color: #facc15;">Wait for breakdown below Swing Low</span>`;
+      stateText = isIndices ? `RETESTING${setupSuffix}` : "RETESTING VWAP";
+      
+      let lineLabel = "VWAP";
+      if (isIndices) {
+        if (s.setupType === 1) lineLabel = "CPR Bottom (BC)";
+        else if (s.setupType === 2) lineLabel = "Resistance 1 (R1)";
+        else if (s.setupType === 3) lineLabel = "Support 1 (S1)";
+      }
+
+      detailsHtml = isIndices
+        ? `<span>Retest Bound: ${lineLabel}</span><br><span>Swing Low: ${formatVal(s.swingLow)}</span><br><span style="color: #facc15;">Wait for breakdown below Swing Low</span>`
+        : `<span>VWAP: ${formatVal(s.currentVwap)}</span><br><span>Swing Low: ${formatVal(s.swingLow)}</span><br><span style="color: #facc15;">Wait for breakdown below Swing Low</span>`;
     } else if (stateStr === "SHORT_TRIGGERED") {
       stateClass = "status-triggered-short";
-      stateText = "SHORT ENTRY";
+      stateText = `SHORT ENTRY${setupSuffix}`;
       detailsHtml = `<span style="color: #f87171; font-weight: 700;">🚨 ENTRY TAKEN</span><br><span>Entry: ${formatVal(s.entry)}</span><br><span>SL: ${formatVal(s.sl)}</span><br><span>Target: ${formatVal(s.target)}</span>`;
     }
 
