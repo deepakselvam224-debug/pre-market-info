@@ -926,12 +926,23 @@ function renderCatalystList(elementId, articles, category, isFallback = false) {
     const directLabel = article.direct ? '⚡ Direct' : '🌐 Indirect';
     const directClass = article.direct ? 'direct-impact' : 'indirect-impact';
 
+    const prefixText = article.impact === 'high' 
+      ? '[🔴 HIGH IMPACT] ' 
+      : (article.impact === 'medium' ? '[🟡 MEDIUM IMPACT] ' : '[⚪ LOW IMPACT] ');
+      
+    const prefixClass = article.impact === 'high' 
+      ? 'prefix-high' 
+      : (article.impact === 'medium' ? 'prefix-medium' : 'prefix-low');
+
     itemDiv.innerHTML = `
       <div class="catalyst-meta">
         <span class="catalyst-source">${article.source} ${fallbackHTML}</span>
         <span class="catalyst-time">${timeFormatted}</span>
       </div>
-      <div class="catalyst-title">${article.title}</div>
+      <div class="catalyst-title">
+        <span class="news-impact-prefix ${prefixClass}">${prefixText}</span>
+        ${article.title}
+      </div>
       <div class="catalyst-summary">${article.description || 'No description provided.'}</div>
       <div class="catalyst-tags">
         <span class="tag-impact ${impactClass}">${impactLabel}</span>

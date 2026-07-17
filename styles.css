@@ -2131,3 +2131,34 @@ body.light-theme .flow-green {
 body.light-theme .flow-red {
   color: #dc2626 !important;
 }
+
+/* News Title Impact Prefixes */
+.news-impact-prefix {
+  font-weight: 800;
+  margin-right: 0.35rem;
+}
+
+.prefix-high {
+  color: #f87171;
+}
+
+.prefix-medium {
+  color: #facc15;
+}
+
+.prefix-low {
+  color: #9ca3af;
+}
+
+/* Light theme overrides for high contrast readability */
+body.light-theme .prefix-high {
+  color: #dc2626 !important;
+}
+
+body.light-theme .prefix-medium {
+  color: #d97706 !important;
+}
+
+body.light-theme .prefix-low {
+  color: #4b5563 !important;
+}
