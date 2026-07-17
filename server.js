@@ -50,6 +50,20 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (urlPath === '/api/fii-dii') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    });
+    fetchFiiDiiActivity().then(data => {
+      res.end(JSON.stringify(data));
+    }).catch(err => {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ error: err.message }));
+    });
+    return;
+  }
+
   // Expose API Endpoint for server-side parsed financial news
   if (urlPath === '/api/news') {
     res.writeHead(200, {
@@ -771,8 +785,8 @@ function getAssetAnalysis(symbol) {
     const changePercent = (change / prevClose) * 100;
     
     const cpr = hlc ? calculateCPR(hlc) : null;
-    const isCommodityCrypto = (symbol === 'NG=F' || symbol === 'ETH-USD');
-    const strategy = isCommodityCrypto
+    const isCommodity = (symbol === 'NG=F');
+    const strategy = isCommodity
       ? calculateVWAPAndStrategy(intradayResult.chart.result[0], cpr, true)
       : calculateStrategy1(intradayResult.chart.result[0], cpr);
     
@@ -995,19 +1009,31 @@ function fetchAndParseRSS(url, category) {
               let impact = "low";
 
               if (category === 'equity') {
-                const directKeywords = ['nifty', 'bank nifty', 'nse', 'bse', 'rbi', 'sebi', 'inflation', 'interest rate', 'repo rate', 'earnings', 'reliance', 'hdfc', 'icici', 'infy', 'tcs', 'tata'];
-                const highKeywords = ['rate hike', 'rate cut', 'policy change', 'inflation spikes', 'probe', 'beats estimates', 'net profit jumps', 'crash', 'surge', 'plummet', 'earnings beats'];
+                const directKeywords = ['nifty', 'bank nifty', 'nse', 'bse', 'rbi', 'sebi', 'inflation', 'interest rate', 'repo rate', 'earnings', 'reliance', 'hdfc', 'icici', 'infy', 'tcs', 'tata', 'adani', 'fii', 'dii'];
+                const highKeywords = ['rate hike', 'rate cut', 'policy change', 'inflation spikes', 'probe', 'crash', 'surge', 'plummet', 'adani group', 'market crash', 'black swan'];
+                const mediumKeywords = ['profit jumps', 'beats estimates', 'slips', 'revenue', 'block deal', 'shares up', 'shares down', 'gains', 'losses', 'dividends', 'offload', 'soar', 'multibagger', 'gmp', 'ipo'];
                 
                 direct = directKeywords.some(kw => text.includes(kw));
-                const isHigh = highKeywords.some(kw => text.includes(kw));
-                impact = isHigh ? "high" : "low";
+                if (highKeywords.some(kw => text.includes(kw))) {
+                  impact = "high";
+                } else if (mediumKeywords.some(kw => text.includes(kw))) {
+                  impact = "medium";
+                } else {
+                  impact = "low";
+                }
               } else {
                 const directKeywords = ['natural gas', 'gas futures', 'henry hub', 'eia', 'lng', 'weather', 'freeze', 'heatwave', 'storage', 'inventory', 'withdrawal', 'injection'];
                 const highKeywords = ['weather alert', 'colder forecast', 'supply freeze', 'storage jump', 'inventory drop', 'plummet', 'surge', 'shutdown'];
+                const mediumKeywords = ['warmer', 'colder', 'production', 'drilling', 'export', 'imports', 'lng export', 'pipeline', 'slide', 'rising output'];
                 
                 direct = directKeywords.some(kw => text.includes(kw));
-                const isHigh = highKeywords.some(kw => text.includes(kw));
-                impact = isHigh ? "high" : "low";
+                if (highKeywords.some(kw => text.includes(kw))) {
+                  impact = "high";
+                } else if (mediumKeywords.some(kw => text.includes(kw))) {
+                  impact = "medium";
+                } else {
+                  impact = "low";
+                }
               }
 
               items.push({
@@ -1028,6 +1054,59 @@ function fetchAndParseRSS(url, category) {
         }
       });
     }).on('error', () => resolve([]));
+  });
+}
+
+let cachedFiiDiiData = null;
+let lastFiiDiiFetchTime = 0;
+
+function fetchFiiDiiActivity() {
+  const now = Date.now();
+  // Cache for 15 minutes to prevent hammering
+  if (cachedFiiDiiData && (now - lastFiiDiiFetchTime < 15 * 60 * 1000)) {
+    return Promise.resolve(cachedFiiDiiData);
+  }
+
+  return new Promise((resolve) => {
+    const url = 'https://www.moneycontrol.com/markets/fii-dii-data/';
+    const options = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    };
+
+    https.get(url, options, (res) => {
+      if (res.statusCode !== 200) {
+        return resolve(cachedFiiDiiData || []);
+      }
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const startTag = '__NEXT_DATA__" type="application/json">';
+          const startIdx = body.indexOf(startTag);
+          if (startIdx === -1) throw new Error("Could not find __NEXT_DATA__");
+          
+          const jsonStart = startIdx + startTag.length;
+          const endIdx = body.indexOf('</script>', jsonStart);
+          if (endIdx === -1) throw new Error("Could not find script closing tag");
+          
+          const jsonStr = body.substring(jsonStart, endIdx);
+          const data = JSON.parse(jsonStr);
+          const rawList = data.props.pageProps.FiiDiiData.fiiDiiData || [];
+          
+          cachedFiiDiiData = rawList;
+          lastFiiDiiFetchTime = Date.now();
+          resolve(rawList);
+        } catch (e) {
+          console.error("FII DII parsing error, serving cache:", e);
+          resolve(cachedFiiDiiData || []);
+        }
+      });
+    }).on('error', (err) => {
+      console.error("FII DII network error, serving cache:", err);
+      resolve(cachedFiiDiiData || []);
+    });
   });
 }
 

@@ -1,4 +1,4 @@
-/* Reset and CSS Variables */
+/* Reset and CSS Variables - v19.0 */
 :root {
   --bg-main: #0a0d10;
   --bg-card: rgba(20, 26, 33, 0.65);
@@ -440,6 +440,9 @@ body {
 }
 .catalyst-item.impact-critical::before {
   background: var(--bearish);
+}
+.catalyst-item.impact-medium::before {
+  background: #f59e0b; /* Amber/Yellow indicator for Medium Impact */
 }
 .catalyst-item.type-gas::before {
   background: var(--gas-cyan);
@@ -1414,6 +1417,12 @@ input:checked + .slider:before {
   border: 1px solid rgba(239, 68, 68, 0.18);
 }
 
+.medium-impact {
+  background: rgba(245, 158, 11, 0.08); /* Transparent Amber */
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.18);
+}
+
 .low-impact {
   background: rgba(156, 163, 175, 0.08); /* Transparent Gray */
   color: #d1d5db;
@@ -1847,26 +1856,49 @@ body.light-theme .template-btn.secondary:hover {
 }
 
 /* News Container elements */
-body.light-theme .news-card {
+body.light-theme .catalyst-item {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+}
+
+body.light-theme .catalyst-item:hover {
   background: #f9fafb !important;
-  border-color: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
 }
 
-body.light-theme .news-card:hover {
-  background: #f3f4f6 !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
+body.light-theme .catalyst-title {
+  color: #111827 !important;
 }
 
-body.light-theme .news-title {
-  color: #1f2937 !important;
-}
-
-body.light-theme .news-title:hover {
-  color: #10b981 !important;
-}
-
-body.light-theme .news-meta {
+body.light-theme .catalyst-summary {
   color: #4b5563 !important;
+}
+
+body.light-theme .catalyst-time {
+  color: #6b7280 !important;
+}
+
+body.light-theme .catalyst-source {
+  color: #0284c7 !important; /* Premium corporate blue for source in light theme */
+}
+
+body.light-theme .high-impact {
+  background: rgba(239, 68, 68, 0.05) !important;
+  color: #dc2626 !important;
+  border: 1px solid rgba(239, 68, 68, 0.15) !important;
+}
+
+body.light-theme .medium-impact {
+  background: rgba(245, 158, 11, 0.05) !important;
+  color: #d97706 !important;
+  border: 1px solid rgba(245, 158, 11, 0.15) !important;
+}
+
+body.light-theme .low-impact {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: #4b5563 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 body.light-theme .news-tabs-container {
@@ -2000,4 +2032,102 @@ body.light-theme .theme-toggle-btn {
 
 body.light-theme .theme-toggle-btn:hover {
   background: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* FII & DII Activity Desk Styles */
+.fii-dii-card {
+  margin-top: 0.5rem;
+}
+
+.fii-dii-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.fii-dii-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.inst-box {
+  background: rgba(0, 0, 0, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.inst-lbl {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.inst-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-top: 0.25rem;
+}
+
+.fii-dii-total-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.total-val {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.flow-green {
+  color: var(--bullish) !important;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.flow-red {
+  color: var(--bearish) !important;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+/* Light Theme overrides */
+body.light-theme .inst-box {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .inst-val {
+  text-shadow: none !important;
+}
+
+body.light-theme .fii-dii-total-box {
+  background: rgba(0, 0, 0, 0.01) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .flow-green {
+  color: #059669 !important;
+}
+
+body.light-theme .flow-red {
+  color: #dc2626 !important;
 }

@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Fetch Feeds
   refreshAllFeeds();
+  fetchFiiDiiData();
 });
 
 /* --- LIVE INDEX QUOTES POLLING ENGINE (YAHOO PROXIED API) --- */
@@ -353,7 +354,7 @@ function updateIndexCard(id, indexData) {
     const stateStr = s.state;
     const isGas = (id === 'gas');
     const isEth = (id === 'eth');
-    const isIndices = (id === 'nifty' || id === 'banknifty');
+    const isIndices = (id === 'nifty' || id === 'banknifty' || id === 'eth');
     const formatVal = (v) => formatIndexPrice(v, (isGas || isEth));
 
     let stateClass = "status-neutral";
@@ -779,6 +780,7 @@ async function refreshAllFeeds() {
     RAW_GAS_NEWS = data.gas || [];
 
     renderNewsDesk();
+    fetchFiiDiiData();
 
   } catch (error) {
     console.error("Feed aggregation error, serving fallback templates", error);
@@ -874,10 +876,14 @@ function getPreviousMarketCloseTimestamp() {
 // Parse custom feed date strings to prevent browser date crashes
 function parseFeedDate(dateStr) {
   if (!dateStr) return new Date();
-  if (typeof dateStr === 'string' && dateStr.includes(' ') && !dateStr.includes('T')) {
-    return new Date(dateStr.replace(' ', 'T'));
+  let d = dateStr;
+  if (typeof d === 'string') {
+    // Only replace space with T if the string matches the YYYY-MM-DD HH:MM:SS format
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(d)) {
+      d = d.replace(' ', 'T');
+    }
   }
-  const parsed = new Date(dateStr);
+  const parsed = new Date(d);
   return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
@@ -901,13 +907,21 @@ function renderCatalystList(elementId, articles, category, isFallback = false) {
     
     // Add specific border glow styles
     if (article.impact === 'high') itemDiv.classList.add('impact-critical');
+    else if (article.impact === 'medium') itemDiv.classList.add('impact-medium');
     if (article.type === 'gas' || category === 'gas') itemDiv.classList.add('type-gas');
 
     const timeFormatted = formatRelativeTime(article.pubDate);
     const fallbackHTML = isFallback ? `<span class="fallback-badge">Cached</span>` : '';
 
-    const impactLabel = article.impact === 'high' ? '🔴 High Impact' : '⚪ Low Impact';
-    const impactClass = article.impact === 'high' ? 'high-impact' : 'low-impact';
+    let impactLabel = '⚪ Low Impact';
+    let impactClass = 'low-impact';
+    if (article.impact === 'high') {
+      impactLabel = '🔴 High Impact';
+      impactClass = 'high-impact';
+    } else if (article.impact === 'medium') {
+      impactLabel = '🟡 Medium Impact';
+      impactClass = 'medium-impact';
+    }
 
     const directLabel = article.direct ? '⚡ Direct' : '🌐 Indirect';
     const directClass = article.direct ? 'direct-impact' : 'indirect-impact';
@@ -1105,5 +1119,61 @@ function updateThemeIcon(theme) {
   } else {
     // Sun icon for switching to light mode
     icon.innerHTML = `<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L19.42 4.58zM5.99 18.01l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0z"/>`;
+  }
+}
+
+// Fetch FII / DII cash activity daily flows
+async function fetchFiiDiiData() {
+  const dateEl = document.getElementById('fii-dii-date');
+  const fiiValEl = document.getElementById('fii-net-val');
+  const diiValEl = document.getElementById('dii-net-val');
+  const totalValEl = document.getElementById('fii-dii-total-val');
+
+  try {
+    const response = await fetch('/api/fii-dii');
+    if (!response.ok) throw new Error("FII/DII API failed");
+    const data = await response.json();
+
+    if (!data || data.length === 0) {
+      if (dateEl) dateEl.textContent = "Data unavailable";
+      return;
+    }
+
+    const latest = data[0];
+    
+    if (dateEl) dateEl.textContent = latest.fDate || latest.date;
+
+    const parseNum = (str) => {
+      if (!str) return 0;
+      return parseFloat(str.replace(/,/g, ''));
+    };
+
+    const fiiVal = parseNum(latest.fiiCM);
+    const diiVal = parseNum(latest.diiCM);
+    const totalVal = fiiVal + diiVal;
+
+    const formatCr = (v) => {
+      const sign = v >= 0 ? '+' : '';
+      return `${sign}${v.toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr`;
+    };
+
+    if (fiiValEl) {
+      fiiValEl.textContent = formatCr(fiiVal);
+      fiiValEl.className = fiiVal >= 0 ? 'inst-val flow-green' : 'inst-val flow-red';
+    }
+
+    if (diiValEl) {
+      diiValEl.textContent = formatCr(diiVal);
+      diiValEl.className = diiVal >= 0 ? 'inst-val flow-green' : 'inst-val flow-red';
+    }
+
+    if (totalValEl) {
+      totalValEl.textContent = formatCr(totalVal);
+      totalValEl.className = totalVal >= 0 ? 'total-val flow-green' : 'total-val flow-red';
+    }
+
+  } catch (error) {
+    console.error("Error fetching FII/DII data:", error);
+    if (dateEl) dateEl.textContent = "Sync failed";
   }
 }
