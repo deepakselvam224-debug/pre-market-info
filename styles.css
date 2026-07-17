@@ -406,7 +406,7 @@ body {
 }
 
 /* Catalyst Item Styling */
-.catalyst-item {
+.c-i {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 10px;
@@ -417,14 +417,14 @@ body {
   overflow: hidden;
 }
 
-.catalyst-item:hover {
+.c-i:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.08);
   transform: translateX(4px);
 }
 
 /* Indicator strip on left side of news */
-.catalyst-item::before {
+.c-i::before {
   content: '';
   position: absolute;
   left: 0;
@@ -435,20 +435,20 @@ body {
   transition: all 0.2s;
 }
 
-.catalyst-item.impact-high::before {
+.c-i.impact-high::before {
   background: var(--bullish);
 }
-.catalyst-item.impact-critical::before {
+.c-i.impact-critical::before {
   background: var(--bearish);
 }
-.catalyst-item.impact-medium::before {
+.c-i.impact-medium::before {
   background: #f59e0b; /* Amber/Yellow indicator for Medium Impact */
 }
-.catalyst-item.type-gas::before {
+.c-i.type-gas::before {
   background: var(--gas-cyan);
 }
 
-.catalyst-meta {
+.c-m {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -456,16 +456,16 @@ body {
   font-size: 0.7rem;
 }
 
-.catalyst-source {
+.c-so {
   color: var(--gas-cyan);
   font-weight: 600;
 }
 
-.catalyst-time {
+.c-ti {
   color: var(--text-muted);
 }
 
-.catalyst-title {
+.c-t {
   font-size: 0.85rem;
   font-weight: 600;
   color: #ffffff;
@@ -473,7 +473,7 @@ body {
   margin-bottom: 0.35rem;
 }
 
-.catalyst-summary {
+.c-s {
   font-size: 0.75rem;
   color: var(--text-muted);
   line-height: 1.4;
@@ -1395,7 +1395,7 @@ input:checked + .slider:before {
 }
 
 /* Catalyst tags */
-.catalyst-tags {
+.c-tg {
   display: flex;
   gap: 0.4rem;
   margin-top: 0.65rem;
@@ -1856,30 +1856,30 @@ body.light-theme .template-btn.secondary:hover {
 }
 
 /* News Container elements */
-body.light-theme .catalyst-item {
+body.light-theme .c-i {
   background: #ffffff !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
 }
 
-body.light-theme .catalyst-item:hover {
+body.light-theme .c-i:hover {
   background: #f9fafb !important;
   border-color: rgba(0, 0, 0, 0.15) !important;
 }
 
-body.light-theme .catalyst-title {
+body.light-theme .c-t {
   color: #111827 !important;
 }
 
-body.light-theme .catalyst-summary {
+body.light-theme .c-s {
   color: #4b5563 !important;
 }
 
-body.light-theme .catalyst-time {
+body.light-theme .c-ti {
   color: #6b7280 !important;
 }
 
-body.light-theme .catalyst-source {
+body.light-theme .c-so {
   color: #0284c7 !important; /* Premium corporate blue for source in light theme */
 }
 

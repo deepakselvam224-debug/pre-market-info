@@ -903,7 +903,7 @@ function renderCatalystList(elementId, articles, category, isFallback = false) {
 
   articles.forEach(article => {
     const itemDiv = document.createElement('div');
-    itemDiv.className = `catalyst-item`;
+    itemDiv.className = `c-i`;
     
     // Add specific border glow styles
     if (article.impact === 'high') itemDiv.classList.add('impact-critical');
@@ -935,16 +935,16 @@ function renderCatalystList(elementId, articles, category, isFallback = false) {
       : (article.impact === 'medium' ? 'prefix-medium' : 'prefix-low');
 
     itemDiv.innerHTML = `
-      <div class="catalyst-meta">
-        <span class="catalyst-source">${article.source} ${fallbackHTML}</span>
-        <span class="catalyst-time">${timeFormatted}</span>
+      <div class="c-m">
+        <span class="c-so">${article.source} ${fallbackHTML}</span>
+        <span class="c-ti">${timeFormatted}</span>
       </div>
-      <div class="catalyst-title">
+      <div class="c-t">
         <span class="news-impact-prefix ${prefixClass}">${prefixText}</span>
         ${article.title}
       </div>
-      <div class="catalyst-summary">${article.description || 'No description provided.'}</div>
-      <div class="catalyst-tags">
+      <div class="c-s">${article.description || 'No description provided.'}</div>
+      <div class="c-tg">
         <span class="tag-impact ${impactClass}">${impactLabel}</span>
         <span class="tag-type ${directClass}">${directLabel}</span>
       </div>
