@@ -1021,6 +1021,19 @@ function fetchAndParseRSS(url, category) {
                 } else {
                   impact = "low";
                 }
+              } else if (category === 'crypto') {
+                const directKeywords = ['ethereum', 'eth', 'crypto', 'sec', 'etf', 'bitcoin', 'fed', 'interest rate', 'regulation', 'coinbase', 'binance', 'vitalik'];
+                const highKeywords = ['etf approval', 'regulation changes', 'sec lawsuit', 'sec win', 'crash', 'surge', 'hack', 'hard fork', 'upgrades', 'bull run', 'bear market'];
+                const mediumKeywords = ['gas fees', 'sharding', 'layer 2', 'transactions', 'volume', 'accumulation', 'whales', 'rally', 'declines', 'price slide', 'etf outflows', 'etf inflows'];
+                
+                direct = directKeywords.some(kw => text.includes(kw));
+                if (highKeywords.some(kw => text.includes(kw))) {
+                  impact = "high";
+                } else if (mediumKeywords.some(kw => text.includes(kw))) {
+                  impact = "medium";
+                } else {
+                  impact = "low";
+                }
               } else {
                 const directKeywords = ['natural gas', 'gas futures', 'henry hub', 'eia', 'lng', 'weather', 'freeze', 'heatwave', 'storage', 'inventory', 'withdrawal', 'injection'];
                 const highKeywords = ['weather alert', 'colder forecast', 'supply freeze', 'storage jump', 'inventory drop', 'plummet', 'surge', 'shutdown'];
@@ -1126,18 +1139,25 @@ function getParsedNews() {
     'https://news.google.com/rss/search?q=Natural+Gas+OR+Henry+Hub+OR+LNG+energy+when:2d&hl=en-US&gl=US&ceid=US:en'
   ];
 
+  const cryptoFeeds = [
+    'https://news.google.com/rss/search?q=Ethereum+OR+ETH+OR+crypto+market+when:2d&hl=en-US&gl=US&ceid=US:en'
+  ];
+
   const fetchesEq = eqFeeds.map(url => fetchAndParseRSS(url, 'equity'));
   const fetchesGas = gasFeeds.map(url => fetchAndParseRSS(url, 'gas'));
+  const fetchesCrypto = cryptoFeeds.map(url => fetchAndParseRSS(url, 'crypto'));
 
   return Promise.all([
     Promise.all(fetchesEq),
-    Promise.all(fetchesGas)
-  ]).then(([eqResults, gasResults]) => {
+    Promise.all(fetchesGas),
+    Promise.all(fetchesCrypto)
+  ]).then(([eqResults, gasResults, cryptoResults]) => {
     let eqNews = [];
     eqResults.forEach(res => { eqNews = eqNews.concat(res); });
     
     let gasNews = [];
     gasResults.forEach(res => { gasNews = gasNews.concat(res); });
+    cryptoResults.forEach(res => { gasNews = gasNews.concat(res); });
 
     const uniqueEq = [];
     const seenEq = new Set();

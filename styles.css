@@ -1,4 +1,4 @@
-/* Reset and CSS Variables - v19.0 */
+/* Reset and CSS Variables - v20.0 */
 :root {
   --bg-main: #0a0d10;
   --bg-card: rgba(20, 26, 33, 0.65);
@@ -2132,33 +2132,51 @@ body.light-theme .flow-red {
   color: #dc2626 !important;
 }
 
-/* News Title Impact Prefixes */
+/* News Title Impact Prefixes (Pill/Badge style) */
 .news-impact-prefix {
+  display: inline-block;
+  font-size: 0.65rem;
   font-weight: 800;
-  margin-right: 0.35rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
 }
 
 .prefix-high {
   color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .prefix-medium {
   color: #facc15;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.25);
 }
 
 .prefix-low {
   color: #9ca3af;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Light theme overrides for high contrast readability */
 body.light-theme .prefix-high {
   color: #dc2626 !important;
+  background: rgba(239, 68, 68, 0.06) !important;
+  border: 1px solid rgba(239, 68, 68, 0.18) !important;
 }
 
 body.light-theme .prefix-medium {
   color: #d97706 !important;
+  background: rgba(245, 158, 11, 0.06) !important;
+  border: 1px solid rgba(245, 158, 11, 0.18) !important;
 }
 
 body.light-theme .prefix-low {
   color: #4b5563 !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
