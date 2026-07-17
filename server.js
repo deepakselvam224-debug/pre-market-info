@@ -763,9 +763,8 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
     if (c > vwap) {
       if (state.startsWith("SHORT") || state === "NEUTRAL") {
         state = "LONG_MOMENTUM";
-        legHighs = [h];
-        swingHigh = h;
-        swingLow = null;
+        legHighs = swingHigh !== null ? [...legHighs, h] : [h];
+        swingHigh = swingHigh !== null ? Math.max(swingHigh, h) : h;
         entry = null;
         sl = null;
         target = null;
@@ -774,9 +773,8 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
     } else if (c < vwap) {
       if (state.startsWith("LONG") || state === "NEUTRAL") {
         state = "SHORT_MOMENTUM";
-        legLows = [l];
-        swingLow = l;
-        swingHigh = null;
+        legLows = swingLow !== null ? [...legLows, l] : [l];
+        swingLow = swingLow !== null ? Math.min(swingLow, l) : l;
         entry = null;
         sl = null;
         target = null;
