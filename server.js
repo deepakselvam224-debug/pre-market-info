@@ -396,6 +396,57 @@ function calculateStrategy1(chartResult, cpr) {
 
     if (c === null || h === null || l === null) continue;
 
+    // Check if an active trade hit Target or SL to reset to NEUTRAL
+    if (state === "LONG_TRIGGERED") {
+      if (target && c >= target) {
+        state = "NEUTRAL";
+        setupType = null;
+        swingHigh = null;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+        legHighs = [];
+        legLows = [];
+      } else if (sl && c <= sl) {
+        state = "NEUTRAL";
+        setupType = null;
+        swingHigh = null;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+        legHighs = [];
+        legLows = [];
+      }
+    } else if (state === "SHORT_TRIGGERED") {
+      if (target && c <= target) {
+        state = "NEUTRAL";
+        setupType = null;
+        swingHigh = null;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+        legHighs = [];
+        legLows = [];
+      } else if (sl && c >= sl) {
+        state = "NEUTRAL";
+        setupType = null;
+        swingHigh = null;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+        legHighs = [];
+        legLows = [];
+      }
+    }
+
     // Rule: If price is inside CPR, it's a No Trade Zone!
     if (c > cprMin && c < cprMax) {
       state = "NO_TRADE_ZONE";
@@ -509,10 +560,7 @@ function calculateStrategy1(chartResult, cpr) {
         }
       }
     } else if (state === "LONG_RETEST") {
-      legHighs.push(h);
-      swingHigh = Math.max(...legHighs);
-
-      // Check for breakout to Trigger
+      // Check for breakout to Trigger first (before updating swingHigh with current high)
       if (c > swingHigh) {
         state = "LONG_TRIGGERED";
         entry = swingHigh;
@@ -527,6 +575,9 @@ function calculateStrategy1(chartResult, cpr) {
           target = cpr.r2 > entry ? cpr.r2 : cpr.r3;
         }
         signalType = "LONG";
+      } else {
+        legHighs.push(h);
+        swingHigh = Math.max(...legHighs);
       }
     } else if (state === "SHORT_MOMENTUM") {
       legLows.push(l);
@@ -550,10 +601,7 @@ function calculateStrategy1(chartResult, cpr) {
         }
       }
     } else if (state === "SHORT_RETEST") {
-      legLows.push(l);
-      swingLow = Math.min(...legLows);
-
-      // Check for breakdown to Trigger
+      // Check for breakdown to Trigger first (before updating swingLow with current low)
       if (c < swingLow) {
         state = "SHORT_TRIGGERED";
         entry = swingLow;
@@ -568,6 +616,9 @@ function calculateStrategy1(chartResult, cpr) {
           target = cpr.s2 < entry ? cpr.s2 : cpr.s3;
         }
         signalType = "SHORT";
+      } else {
+        legLows.push(l);
+        swingLow = Math.min(...legLows);
       }
     }
   }
@@ -657,6 +708,57 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
 
     if (c === null || vwap === null) continue;
 
+    // Check if an active trade hit Target or SL to reset to NEUTRAL
+    if (state === "LONG_TRIGGERED") {
+      if (target && c >= target) {
+        state = "NEUTRAL";
+        setupType = null;
+        swingHigh = null;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+        legHighs = [];
+        legLows = [];
+      } else if (sl && c <= sl) {
+        state = "NEUTRAL";
+        setupType = null;
+        swingHigh = null;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+        legHighs = [];
+        legLows = [];
+      }
+    } else if (state === "SHORT_TRIGGERED") {
+      if (target && c <= target) {
+        state = "NEUTRAL";
+        setupType = null;
+        swingHigh = null;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+        legHighs = [];
+        legLows = [];
+      } else if (sl && c >= sl) {
+        state = "NEUTRAL";
+        setupType = null;
+        swingHigh = null;
+        swingLow = null;
+        entry = null;
+        sl = null;
+        target = null;
+        signalType = null;
+        legHighs = [];
+        legLows = [];
+      }
+    }
+
     // Check for crossovers of VWAP to force direction shifts
     if (c > vwap) {
       if (state.startsWith("SHORT") || state === "NEUTRAL") {
@@ -700,17 +802,17 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
         }
       }
     } else if (state === "LONG_RETEST") {
-      // If price goes up and makes a new high without breakout close, track it
-      legHighs.push(h);
-      swingHigh = Math.max(...legHighs);
-
-      // Waiting for breakout above swingHigh
+      // Waiting for breakout above swingHigh first (before updating it with current high)
       if (c > swingHigh) {
         state = "LONG_TRIGGERED";
         entry = swingHigh;
         sl = vwap;
         target = cpr ? (cpr.r1 > entry ? cpr.r1 : (cpr.r2 > entry ? cpr.r2 : cpr.r3)) : null;
         signalType = "LONG";
+      } else {
+        // If price goes up and makes a new high without breakout close, track it
+        legHighs.push(h);
+        swingHigh = Math.max(...legHighs);
       }
     } else if (state === "SHORT_MOMENTUM") {
       legLows.push(l);
@@ -729,17 +831,17 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
         }
       }
     } else if (state === "SHORT_RETEST") {
-      // If price goes down and makes a new low without breakdown close, track it
-      legLows.push(l);
-      swingLow = Math.min(...legLows);
-
-      // Waiting for breakdown below swingLow
+      // Waiting for breakdown below swingLow first (before updating it with current low)
       if (c < swingLow) {
         state = "SHORT_TRIGGERED";
         entry = swingLow;
         sl = vwap;
         target = cpr ? (cpr.s1 < entry ? cpr.s1 : (cpr.s2 < entry ? cpr.s2 : cpr.s3)) : null;
         signalType = "SHORT";
+      } else {
+        // If price goes down and makes a new low without breakdown close, track it
+        legLows.push(l);
+        swingLow = Math.min(...legLows);
       }
     }
   }
