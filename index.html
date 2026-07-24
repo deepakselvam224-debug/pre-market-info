@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=35.0">
+  <link rel="stylesheet" href="styles.css?v=36.0">
   <!-- TradingView Widget Script Loader -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 </head>
@@ -670,32 +670,14 @@
         </div>
         <div class="feed-status" id="log-count">0 Trade(s) Logged</div>
       </div>
-      <div class="trade-log-table-container">
-        <table class="trade-log-table">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Asset</th>
-              <th>Setup Type</th>
-              <th>Signal</th>
-              <th>Entry Price</th>
-              <th>Target</th>
-              <th>Stop Loss</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="trade-log-tbody">
-            <tr>
-              <td colspan="8" class="no-trades-msg">No strategy signals triggered in today's session.</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="trade-log-container" id="trade-log-container">
+        <!-- Rendered dynamically by app.js into 4 asset columns (Nifty 50, Bank Nifty, MCX Gas, ETH/USD) -->
       </div>
     </section>
 
   </main>
 
   <!-- Application JS Code -->
-  <script src="app.js?v=35.0"></script>
+  <script src="app.js?v=36.0"></script>
 </body>
 </html>

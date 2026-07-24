@@ -214,55 +214,128 @@ function updateSentimentGauge(data) {
 }
 
 function updateTradeLogTable(tradeLog) {
-  const tbody = document.getElementById('trade-log-tbody');
+  const container = document.getElementById('trade-log-container');
   const countEl = document.getElementById('log-count');
   
-  if (!tbody) return;
+  if (!container) return;
   
-  if (!tradeLog || tradeLog.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="no-trades-msg">No strategy signals triggered in today's session.</td>
-      </tr>
+  const totalCount = tradeLog ? tradeLog.length : 0;
+  if (countEl) countEl.textContent = `${totalCount} Trade(s) Logged`;
+
+  const assetHeads = [
+    {
+      id: 'nifty',
+      title: 'NIFTY 50',
+      icon: '📈',
+      boxClass: 'box-nifty',
+      hdrClass: 'hdr-nifty',
+      trades: tradeLog ? tradeLog.filter(t => t.asset.includes("NIFTY 50")) : [],
+      emptyMsg: 'No NIFTY 50 signals triggered.'
+    },
+    {
+      id: 'banknifty',
+      title: 'BANK NIFTY',
+      icon: '🏦',
+      boxClass: 'box-banknifty',
+      hdrClass: 'hdr-banknifty',
+      trades: tradeLog ? tradeLog.filter(t => t.asset.includes("BANK NIFTY")) : [],
+      emptyMsg: 'No BANK NIFTY signals triggered.'
+    },
+    {
+      id: 'gas',
+      title: 'MCX NATURAL GAS',
+      icon: '🔥',
+      boxClass: 'box-gas',
+      hdrClass: 'hdr-gas',
+      trades: tradeLog ? tradeLog.filter(t => t.asset.includes("NATURAL GAS") || t.asset.includes("GAS")) : [],
+      emptyMsg: 'No Natural Gas signals triggered.'
+    },
+    {
+      id: 'eth',
+      title: 'ETHEREUM (ETH/USD)',
+      icon: '💎',
+      boxClass: 'box-eth',
+      hdrClass: 'hdr-eth',
+      trades: tradeLog ? tradeLog.filter(t => t.asset.includes("ETH")) : [],
+      emptyMsg: 'No Ethereum signals triggered.'
+    }
+  ];
+
+  const gridDiv = document.createElement('div');
+  gridDiv.className = 'trade-log-grid-container';
+
+  assetHeads.forEach(head => {
+    const boxDiv = document.createElement('div');
+    boxDiv.className = `trade-asset-box ${head.boxClass}`;
+
+    const headerDiv = document.createElement('div');
+    headerDiv.className = `trade-asset-header ${head.hdrClass}`;
+    headerDiv.innerHTML = `
+      <div class="asset-hdr-title">
+        <span class="asset-hdr-icon">${head.icon}</span>
+        <span>${head.title}</span>
+      </div>
+      <span class="asset-hdr-count">${head.trades.length}</span>
     `;
-    if (countEl) countEl.textContent = "0 Trade(s) Logged";
-    return;
-  }
 
-  if (countEl) countEl.textContent = `${tradeLog.length} Trade(s) Logged`;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'trade-asset-body';
 
-  tbody.innerHTML = '';
-  
-  // Render trades from newest to oldest
-  tradeLog.slice().reverse().forEach(t => {
-    const tr = document.createElement('tr');
-    
-    // Status formatting
-    let statusClass = "status-log-active";
-    if (t.status.includes("Hit 🟢")) statusClass = "status-log-profit";
-    else if (t.status.includes("Hit 🔴")) statusClass = "status-log-sl";
-    
-    const directionBadge = t.direction === 'LONG' 
-      ? '<span style="color: #4ade80; font-weight: 700;">🟢 BUY</span>' 
-      : '<span style="color: #f87171; font-weight: 700;">🔴 SELL</span>';
+    if (head.trades.length === 0) {
+      bodyDiv.innerHTML = `<div class="empty-trade-msg">${head.emptyMsg}</div>`;
+    } else {
+      // Reverse so newest trades show first
+      head.trades.slice().reverse().forEach(t => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'trade-signal-card';
 
-    const isGas = t.asset.includes("NATURAL GAS");
-    const isEth = t.asset.includes("ETH");
-    const formatVal = (v) => formatIndexPrice(v, (isGas || isEth));
+        let statusClass = "status-log-active";
+        if (t.status.includes("Hit 🟢")) statusClass = "status-log-profit";
+        else if (t.status.includes("Hit 🔴")) statusClass = "status-log-sl";
 
-    tr.innerHTML = `
-      <td>${t.time}</td>
-      <td style="font-weight: 700; color: #ffffff;">${t.asset}</td>
-      <td>${t.setup}</td>
-      <td>${directionBadge}</td>
-      <td style="font-weight: 700;">${formatVal(t.entry)}</td>
-      <td style="color: #34d399;">${formatVal(t.target)}</td>
-      <td style="color: #f87171;">${formatVal(t.sl)}</td>
-      <td class="${statusClass}">${t.status}</td>
-    `;
-    
-    tbody.appendChild(tr);
+        const directionBadge = t.direction === 'LONG' 
+          ? '<span class="trade-direction dir-buy">🟢 BUY</span>' 
+          : '<span class="trade-direction dir-sell">🔴 SELL</span>';
+
+        const isGas = t.asset.includes("NATURAL GAS");
+        const isEth = t.asset.includes("ETH");
+        const formatVal = (v) => formatIndexPrice(v, (isGas || isEth));
+
+        cardDiv.innerHTML = `
+          <div class="trade-card-header">
+            <span class="trade-time">${t.time}</span>
+            <span class="trade-setup-badge">${t.setup}</span>
+          </div>
+          <div class="trade-card-main">
+            ${directionBadge}
+            <span class="trade-status-badge ${statusClass}">${t.status}</span>
+          </div>
+          <div class="trade-card-levels">
+            <div class="level-stat">
+              <span class="level-lbl">Entry</span>
+              <span class="level-val val-entry">${formatVal(t.entry)}</span>
+            </div>
+            <div class="level-stat">
+              <span class="level-lbl">Target</span>
+              <span class="level-val val-target">${formatVal(t.target)}</span>
+            </div>
+            <div class="level-stat">
+              <span class="level-lbl">Stop Loss</span>
+              <span class="level-val val-sl">${formatVal(t.sl)}</span>
+            </div>
+          </div>
+        `;
+        bodyDiv.appendChild(cardDiv);
+      });
+    }
+
+    boxDiv.appendChild(headerDiv);
+    boxDiv.appendChild(bodyDiv);
+    gridDiv.appendChild(boxDiv);
   });
+
+  container.innerHTML = '';
+  container.appendChild(gridDiv);
 }
 
 function updateIndexCard(id, indexData) {
