@@ -901,64 +901,129 @@ function renderCatalystList(elementId, articles, category, isFallback = false) {
     return;
   }
 
-  articles.forEach(article => {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = `c-i`;
-    
-    // Add specific border glow styles
-    if (article.impact === 'high') itemDiv.classList.add('impact-critical');
-    else if (article.impact === 'medium') itemDiv.classList.add('impact-medium');
-    if (article.type === 'gas' || category === 'gas') itemDiv.classList.add('type-gas');
+  const highArticles = articles.filter(a => a.impact === 'high');
+  const mediumArticles = articles.filter(a => a.impact === 'medium');
+  const lowArticles = articles.filter(a => a.impact === 'low' || (a.impact !== 'high' && a.impact !== 'medium'));
 
-    const timeFormatted = formatRelativeTime(article.pubDate);
-    const fallbackHTML = isFallback ? `<span class="fallback-badge">Cached</span>` : '';
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'impact-grid-container';
 
-    let impactLabel = '⚪ Low Impact';
-    let impactClass = 'low-impact';
-    if (article.impact === 'high') {
-      impactLabel = '🔴 High Impact';
-      impactClass = 'high-impact';
-    } else if (article.impact === 'medium') {
-      impactLabel = '🟡 Medium Impact';
-      impactClass = 'medium-impact';
+  const categories = [
+    {
+      key: 'high',
+      title: 'HIGH IMPACT NEWS',
+      emoji: '🔴',
+      badgeClass: 'hdr-high',
+      boxClass: 'box-high',
+      articles: highArticles,
+      emptyMsg: 'No High Impact catalysts'
+    },
+    {
+      key: 'medium',
+      title: 'MEDIUM IMPACT NEWS',
+      emoji: '🟢',
+      badgeClass: 'hdr-medium',
+      boxClass: 'box-medium',
+      articles: mediumArticles,
+      emptyMsg: 'No Medium Impact catalysts'
+    },
+    {
+      key: 'low',
+      title: 'LOW IMPACT NEWS',
+      emoji: '🔵',
+      badgeClass: 'hdr-low',
+      boxClass: 'box-low',
+      articles: lowArticles,
+      emptyMsg: 'No Low Impact catalysts'
     }
+  ];
 
-    const directLabel = article.direct ? '⚡ Direct' : '🌐 Indirect';
-    const directClass = article.direct ? 'direct-impact' : 'indirect-impact';
+  categories.forEach(cat => {
+    const boxDiv = document.createElement('div');
+    boxDiv.className = `impact-box ${cat.boxClass}`;
 
-    const prefixText = article.impact === 'high' 
-      ? '[🔴 HIGH IMPACT] ' 
-      : (article.impact === 'medium' ? '[🟡 MEDIUM IMPACT] ' : '[⚪ LOW IMPACT] ');
-      
-    const prefixClass = article.impact === 'high' 
-      ? 'prefix-high' 
-      : (article.impact === 'medium' ? 'prefix-medium' : 'prefix-low');
-
-    itemDiv.innerHTML = `
-      <div class="c-m">
-        <span class="c-so">${article.source} ${fallbackHTML}</span>
-        <span class="c-ti">${timeFormatted}</span>
+    const headerDiv = document.createElement('div');
+    headerDiv.className = `impact-box-header ${cat.badgeClass}`;
+    headerDiv.innerHTML = `
+      <div class="impact-hdr-title">
+        <span class="impact-hdr-emoji">${cat.emoji}</span>
+        <span>${cat.title}</span>
       </div>
-      <div class="c-t">
-        <span class="news-impact-prefix ${prefixClass}">${prefixText}</span>
-        ${article.title}
-      </div>
-      <div class="c-s">${article.description || 'No description provided.'}</div>
-      <div class="c-tg">
-        <span class="tag-impact ${impactClass}">${impactLabel}</span>
-        <span class="tag-type ${directClass}">${directLabel}</span>
-      </div>
+      <span class="impact-hdr-count">${cat.articles.length}</span>
     `;
 
-    // Click card to open the external link directly (Original V1 style)
-    itemDiv.addEventListener('click', () => {
-      if (article.link) {
-        window.open(article.link, '_blank');
-      }
-    });
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'impact-box-body';
 
-    container.appendChild(itemDiv);
+    if (cat.articles.length === 0) {
+      bodyDiv.innerHTML = `<div class="empty-impact-msg">${cat.emptyMsg}</div>`;
+    } else {
+      cat.articles.forEach(article => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = `c-i`;
+        
+        if (article.impact === 'high') itemDiv.classList.add('impact-critical');
+        else if (article.impact === 'medium') itemDiv.classList.add('impact-medium');
+        else itemDiv.classList.add('impact-low');
+
+        if (article.type === 'gas' || category === 'gas') itemDiv.classList.add('type-gas');
+
+        const timeFormatted = formatRelativeTime(article.pubDate);
+        const fallbackHTML = isFallback ? `<span class="fallback-badge">Cached</span>` : '';
+
+        let impactLabel = '🔵 Low Impact';
+        let impactClass = 'low-impact';
+        if (article.impact === 'high') {
+          impactLabel = '🔴 High Impact';
+          impactClass = 'high-impact';
+        } else if (article.impact === 'medium') {
+          impactLabel = '🟢 Medium Impact';
+          impactClass = 'medium-impact';
+        }
+
+        const directLabel = article.direct ? '⚡ Direct' : '🌐 Indirect';
+        const directClass = article.direct ? 'direct-impact' : 'indirect-impact';
+
+        const prefixText = article.impact === 'high' 
+          ? '[🔴 HIGH IMPACT] ' 
+          : (article.impact === 'medium' ? '[🟢 MEDIUM IMPACT] ' : '[🔵 LOW IMPACT] ');
+          
+        const prefixClass = article.impact === 'high' 
+          ? 'prefix-high' 
+          : (article.impact === 'medium' ? 'prefix-medium' : 'prefix-low');
+
+        itemDiv.innerHTML = `
+          <div class="c-m">
+            <span class="c-so">${article.source} ${fallbackHTML}</span>
+            <span class="c-ti">${timeFormatted}</span>
+          </div>
+          <div class="c-t">
+            <span class="news-impact-prefix ${prefixClass}">${prefixText}</span>
+            ${article.title}
+          </div>
+          <div class="c-s">${article.description || 'No description provided.'}</div>
+          <div class="c-tg">
+            <span class="tag-impact ${impactClass}">${impactLabel}</span>
+            <span class="tag-type ${directClass}">${directLabel}</span>
+          </div>
+        `;
+
+        itemDiv.addEventListener('click', () => {
+          if (article.link) {
+            window.open(article.link, '_blank');
+          }
+        });
+
+        bodyDiv.appendChild(itemDiv);
+      });
+    }
+
+    boxDiv.appendChild(headerDiv);
+    boxDiv.appendChild(bodyDiv);
+    gridContainer.appendChild(boxDiv);
   });
+
+  container.appendChild(gridContainer);
 }
 
 function formatRelativeTime(dateStr) {
