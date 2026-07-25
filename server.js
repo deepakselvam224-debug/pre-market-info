@@ -650,10 +650,10 @@ function calculateStrategy1(chartResult, cpr) {
   };
 }
 
-// Calculate VWAP & Track Strategy Setup State Machine
-function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
+// Calculate CPR Strategy 1 (Nifty 50, Bank Nifty, Ethereum)
+function calculateCPRStrategy(chartResult, cpr) {
   if (!chartResult || !chartResult.indicators || !chartResult.indicators.quote) {
-    return { state: "NEUTRAL", swingHigh: null, swingLow: null, entry: null, sl: null, target: null, currentVwap: null };
+    return { state: "NEUTRAL", setupType: null, swingHigh: null, swingLow: null, entry: null, sl: null, target: null, signalType: null, currentVwap: null, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } };
   }
 
   const quote = chartResult.indicators.quote[0];
@@ -671,32 +671,34 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
     const l = lows[i];
     const c = closes[i];
     const v = volumes[i] || 0;
-
     if (h === null || l === null || c === null) {
       vwaps.push(vwaps.length > 0 ? vwaps[vwaps.length - 1] : null);
       continue;
     }
-
     const typicalPrice = (h + l + c) / 3;
     cumTypicalVolume += typicalPrice * v;
     cumVolume += v;
-
-    const vwapVal = cumVolume > 0 ? cumTypicalVolume / cumVolume : typicalPrice;
-    vwaps.push(vwapVal);
+    vwaps.push(cumVolume > 0 ? cumTypicalVolume / cumVolume : typicalPrice);
   }
 
-  const currentVwap = vwaps.length > 0 ? vwaps[vwaps.length - 1] : null;
+  const currentVwap = vwaps[vwaps.length - 1] || null;
 
-  // Run Strategy State Machine
+  if (!cpr) {
+    return { state: "NEUTRAL", setupType: null, swingHigh: null, swingLow: null, entry: null, sl: null, target: null, signalType: null, currentVwap, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } };
+  }
+
+  const cprMin = Math.min(cpr.tc, cpr.bc);
+  const cprMax = Math.max(cpr.tc, cpr.bc);
+
   let state = "NEUTRAL";
+  let setupType = null;
   let swingHigh = null;
   let swingLow = null;
   let entry = null;
   let sl = null;
   let target = null;
-  let signalType = null; // "LONG" or "SHORT"
+  let signalType = null;
 
-  // Temporary trackers for legs
   let legHighs = [];
   let legLows = [];
 
@@ -704,148 +706,109 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
     const c = closes[i];
     const h = highs[i];
     const l = lows[i];
-    const vwap = vwaps[i];
 
-    if (c === null || vwap === null) continue;
+    if (c === null || h === null || l === null) continue;
 
-    // Check if an active trade hit Target or SL to reset to NEUTRAL
+    // Reset if active trade hits Target or SL
     if (state === "LONG_TRIGGERED") {
       if (target && c >= target) {
-        state = "NEUTRAL";
-        setupType = null;
-        swingHigh = null;
-        swingLow = null;
-        entry = null;
-        sl = null;
-        target = null;
-        signalType = null;
-        legHighs = [];
-        legLows = [];
+        state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
       } else if (sl && c <= sl) {
-        state = "NEUTRAL";
-        setupType = null;
-        swingHigh = null;
-        swingLow = null;
-        entry = null;
-        sl = null;
-        target = null;
-        signalType = null;
-        legHighs = [];
-        legLows = [];
+        state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
       }
     } else if (state === "SHORT_TRIGGERED") {
       if (target && c <= target) {
-        state = "NEUTRAL";
-        setupType = null;
-        swingHigh = null;
-        swingLow = null;
-        entry = null;
-        sl = null;
-        target = null;
-        signalType = null;
-        legHighs = [];
-        legLows = [];
+        state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
       } else if (sl && c >= sl) {
-        state = "NEUTRAL";
-        setupType = null;
-        swingHigh = null;
-        swingLow = null;
-        entry = null;
-        sl = null;
-        target = null;
-        signalType = null;
-        legHighs = [];
-        legLows = [];
+        state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
       }
     }
 
-    // Check for crossovers of VWAP to force direction shifts
-    if (c > vwap) {
-      if (state.startsWith("SHORT") || state === "NEUTRAL") {
-        state = "LONG_MOMENTUM";
-        legHighs = swingHigh !== null ? [...legHighs, h] : [h];
-        swingHigh = swingHigh !== null ? Math.max(swingHigh, h) : h;
-        entry = null;
-        sl = null;
-        target = null;
-        signalType = null;
-      }
-    } else if (c < vwap) {
-      if (state.startsWith("LONG") || state === "NEUTRAL") {
-        state = "SHORT_MOMENTUM";
-        legLows = swingLow !== null ? [...legLows, l] : [l];
-        swingLow = swingLow !== null ? Math.min(swingLow, l) : l;
-        entry = null;
-        sl = null;
-        target = null;
-        signalType = null;
+    // CPR No Trade Zone check (if not triggered)
+    if (c > cprMin && c < cprMax) {
+      if (!state.endsWith("TRIGGERED")) {
+        state = "NO_TRADE_ZONE"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null;
+        continue;
       }
     }
 
-    // Now process the active direction state
+    if (state === "NO_TRADE_ZONE") {
+      state = "NEUTRAL";
+    }
+
+    if (state === "NEUTRAL") {
+      if (c > cprMax) {
+        if (c > cpr.r1) {
+          state = "LONG_MOMENTUM"; setupType = 3; legHighs = [h]; swingHigh = h;
+        } else {
+          state = "LONG_MOMENTUM"; setupType = 1; legHighs = [h]; swingHigh = h;
+        }
+      } else if (c < cprMin) {
+        if (c < cpr.s1) {
+          state = "SHORT_MOMENTUM"; setupType = 3; legLows = [l]; swingLow = l;
+        } else {
+          state = "SHORT_MOMENTUM"; setupType = 1; legLows = [l]; swingLow = l;
+        }
+      }
+
+      if (c < cprMin && l <= cpr.s1 && c > cpr.s1) {
+        state = "LONG_MOMENTUM"; setupType = 2; legHighs = [h]; swingHigh = h;
+      } else if (c > cprMax && h >= cpr.r1 && c < cpr.r1) {
+        state = "SHORT_MOMENTUM"; setupType = 2; legLows = [l]; swingLow = l;
+      }
+    } else {
+      // Invalidation / direction flip
+      if (state.startsWith("LONG") && !state.endsWith("TRIGGERED")) {
+        if (c < cprMin) {
+          state = "SHORT_MOMENTUM"; setupType = 1; legLows = [l]; swingLow = l; swingHigh = null;
+        }
+      } else if (state.startsWith("SHORT") && !state.endsWith("TRIGGERED")) {
+        if (c > cprMax) {
+          state = "LONG_MOMENTUM"; setupType = 1; legHighs = [h]; swingHigh = h; swingLow = null;
+        }
+      }
+    }
+
+    // Process Momentum & Retests
     if (state === "LONG_MOMENTUM") {
       legHighs.push(h);
       swingHigh = Math.max(...legHighs);
-      
-      if (isCommodityCrypto) {
-        // Confirmation 3 (Retest): Low must touch or cross below VWAP, but close remains on/above it
-        if (l <= vwap && c >= vwap) {
-          state = "LONG_RETEST";
-        }
-      } else {
-        // Pullback threshold: price pulls back to within 35% of the distance between swingHigh and VWAP
-        const threshold = vwap + (swingHigh - vwap) * 0.35;
-        if (c <= threshold) {
-          state = "LONG_RETEST";
-        }
-      }
+
+      if (setupType === 1 && l <= cprMax && c >= cprMax) state = "LONG_RETEST";
+      else if (setupType === 2 && l <= cpr.s1 && c >= cpr.s1) state = "LONG_RETEST";
+      else if (setupType === 3 && l <= cpr.r1 && c >= cpr.r1) state = "LONG_RETEST";
     } else if (state === "LONG_RETEST") {
-      // Waiting for breakout above swingHigh first (before updating it with current high)
+      // Freeze swingHigh and check breakout
       if (c > swingHigh) {
         state = "LONG_TRIGGERED";
         entry = swingHigh;
-        sl = vwap;
-        target = cpr ? (cpr.r1 > entry ? cpr.r1 : (cpr.r2 > entry ? cpr.r2 : cpr.r3)) : null;
+        if (setupType === 1) { sl = cprMax; target = cpr.r1 > entry ? cpr.r1 : (cpr.r2 > entry ? cpr.r2 : cpr.r3); }
+        else if (setupType === 2) { sl = cpr.s1; target = cprMin; }
+        else if (setupType === 3) { sl = cpr.r1; target = cpr.r2 > entry ? cpr.r2 : cpr.r3; }
         signalType = "LONG";
-      } else {
-        // If price goes up and makes a new high without breakout close, track it
-        legHighs.push(h);
-        swingHigh = Math.max(...legHighs);
       }
     } else if (state === "SHORT_MOMENTUM") {
       legLows.push(l);
       swingLow = Math.min(...legLows);
-      
-      if (isCommodityCrypto) {
-        // Confirmation 3 (Retest): High must touch or cross above VWAP, but close remains on/below it
-        if (h >= vwap && c <= vwap) {
-          state = "SHORT_RETEST";
-        }
-      } else {
-        // Pullback threshold: price pulls back to within 35% of the distance between VWAP and swingLow
-        const threshold = vwap - (vwap - swingLow) * 0.35;
-        if (c >= threshold) {
-          state = "SHORT_RETEST";
-        }
-      }
+
+      if (setupType === 1 && h >= cprMin && c <= cprMin) state = "SHORT_RETEST";
+      else if (setupType === 2 && h >= cpr.r1 && c <= cpr.r1) state = "SHORT_RETEST";
+      else if (setupType === 3 && h >= cpr.s1 && c <= cpr.s1) state = "SHORT_RETEST";
     } else if (state === "SHORT_RETEST") {
-      // Waiting for breakdown below swingLow first (before updating it with current low)
+      // Freeze swingLow and check breakdown
       if (c < swingLow) {
         state = "SHORT_TRIGGERED";
         entry = swingLow;
-        sl = vwap;
-        target = cpr ? (cpr.s1 < entry ? cpr.s1 : (cpr.s2 < entry ? cpr.s2 : cpr.s3)) : null;
+        if (setupType === 1) { sl = cprMin; target = cpr.s1 < entry ? cpr.s1 : (cpr.s2 < entry ? cpr.s2 : cpr.s3); }
+        else if (setupType === 2) { sl = cpr.r1; target = cprMax; }
+        else if (setupType === 3) { sl = cpr.s1; target = cpr.s2 < entry ? cpr.s2 : cpr.s3; }
         signalType = "SHORT";
-      } else {
-        // If price goes down and makes a new low without breakdown close, track it
-        legLows.push(l);
-        swingLow = Math.min(...legLows);
       }
     }
   }
 
   const lastC = closes[closes.length - 1] || 0;
-  const lastVwap = vwaps[vwaps.length - 1] || lastC;
+  const lastVwap = currentVwap || lastC;
   const ma15 = closes.length >= 3 ? closes.slice(-3).reduce((a, b) => a + b, 0) / 3 : lastC;
   const ma60 = closes.length >= 12 ? closes.slice(-12).reduce((a, b) => a + b, 0) / 12 : lastC;
   const prevCloseVal = cpr ? cpr.p : lastC;
@@ -857,17 +820,114 @@ function calculateVWAPAndStrategy(chartResult, cpr, isCommodityCrypto = false) {
     '1d': lastC > prevCloseVal ? 'bull' : 'bear'
   };
 
-  return {
-    state,
-    swingHigh,
-    swingLow,
-    entry,
-    sl,
-    target,
-    signalType,
-    currentVwap,
-    trends
+  return { state, setupType, swingHigh, swingLow, entry, sl, target, signalType, currentVwap, trends };
+}
+
+// Calculate VWAP Strategy 2 (MCX Natural Gas)
+function calculateVWAPStrategy(chartResult, cpr) {
+  if (!chartResult || !chartResult.indicators || !chartResult.indicators.quote) {
+    return { state: "NEUTRAL", setupType: null, swingHigh: null, swingLow: null, entry: null, sl: null, target: null, signalType: null, currentVwap: null, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } };
+  }
+
+  const quote = chartResult.indicators.quote[0];
+  const highs = quote.high || [];
+  const lows = quote.low || [];
+  const closes = quote.close || [];
+  const volumes = quote.volume || [];
+
+  let cumTypicalVolume = 0;
+  let cumVolume = 0;
+  const vwaps = [];
+
+  for (let i = 0; i < closes.length; i++) {
+    const h = highs[i];
+    const l = lows[i];
+    const c = closes[i];
+    const v = volumes[i] || 0;
+    if (h === null || l === null || c === null) {
+      vwaps.push(vwaps.length > 0 ? vwaps[vwaps.length - 1] : null);
+      continue;
+    }
+    const typicalPrice = (h + l + c) / 3;
+    cumTypicalVolume += typicalPrice * v;
+    cumVolume += v;
+    vwaps.push(cumVolume > 0 ? cumTypicalVolume / cumVolume : typicalPrice);
+  }
+
+  const currentVwap = vwaps[vwaps.length - 1] || null;
+
+  let state = "NEUTRAL";
+  let setupType = null;
+  let swingHigh = null;
+  let swingLow = null;
+  let entry = null;
+  let sl = null;
+  let target = null;
+  let signalType = null;
+  let legHighs = [];
+  let legLows = [];
+
+  for (let i = 0; i < closes.length; i++) {
+    const c = closes[i];
+    const h = highs[i];
+    const l = lows[i];
+    const vwap = vwaps[i];
+
+    if (c === null || vwap === null) continue;
+
+    // Reset on Target or SL
+    if (state === "LONG_TRIGGERED") {
+      if (target && c >= target) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+      else if (sl && c <= sl) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+    } else if (state === "SHORT_TRIGGERED") {
+      if (target && c <= target) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+      else if (sl && c >= sl) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+    }
+
+    if (state === "NEUTRAL") {
+      if (c > vwap) { state = "LONG_MOMENTUM"; setupType = 1; legHighs = [h]; swingHigh = h; }
+      else if (c < vwap) { state = "SHORT_MOMENTUM"; setupType = 1; legLows = [l]; swingLow = l; }
+    } else {
+      if (state.startsWith("LONG") && !state.endsWith("TRIGGERED") && c < vwap) {
+        state = "SHORT_MOMENTUM"; setupType = 1; legLows = [l]; swingLow = l; swingHigh = null;
+      } else if (state.startsWith("SHORT") && !state.endsWith("TRIGGERED") && c > vwap) {
+        state = "LONG_MOMENTUM"; setupType = 1; legHighs = [h]; swingHigh = h; swingLow = null;
+      }
+    }
+
+    if (state === "LONG_MOMENTUM") {
+      legHighs.push(h);
+      swingHigh = Math.max(...legHighs);
+      if (l <= vwap && c >= vwap) state = "LONG_RETEST";
+    } else if (state === "LONG_RETEST") {
+      if (c > swingHigh) {
+        state = "LONG_TRIGGERED"; entry = swingHigh; sl = vwap; target = swingHigh + (swingHigh - vwap) * 1.5; signalType = "LONG";
+      }
+    } else if (state === "SHORT_MOMENTUM") {
+      legLows.push(l);
+      swingLow = Math.min(...legLows);
+      if (h >= vwap && c <= vwap) state = "SHORT_RETEST";
+    } else if (state === "SHORT_RETEST") {
+      if (c < swingLow) {
+        state = "SHORT_TRIGGERED"; entry = swingLow; sl = vwap; target = swingLow - (vwap - swingLow) * 1.5; signalType = "SHORT";
+      }
+    }
+  }
+
+  const lastC = closes[closes.length - 1] || 0;
+  const lastVwap = currentVwap || lastC;
+  const ma15 = closes.length >= 3 ? closes.slice(-3).reduce((a, b) => a + b, 0) / 3 : lastC;
+  const ma60 = closes.length >= 12 ? closes.slice(-12).reduce((a, b) => a + b, 0) / 12 : lastC;
+  const prevCloseVal = cpr ? cpr.p : lastC;
+
+  const trends = {
+    '5m': lastC > lastVwap ? 'bull' : 'bear',
+    '15m': lastC > ma15 ? 'bull' : 'bear',
+    '1h': lastC > ma60 ? 'bull' : 'bear',
+    '1d': lastC > prevCloseVal ? 'bull' : 'bear'
   };
+
+  return { state, setupType, swingHigh, swingLow, entry, sl, target, signalType, currentVwap, trends };
 }
 
 // Integrated Quote & CPR Analysis function
@@ -887,8 +947,8 @@ function getAssetAnalysis(symbol) {
     const cpr = hlc ? calculateCPR(hlc) : null;
     const isCommodity = (symbol === 'NG=F');
     const strategy = isCommodity
-      ? calculateVWAPAndStrategy(intradayResult.chart.result[0], cpr, true)
-      : calculateStrategy1(intradayResult.chart.result[0], cpr);
+      ? calculateVWAPStrategy(intradayResult.chart.result[0], cpr)
+      : calculateCPRStrategy(intradayResult.chart.result[0], cpr);
     
     return {
       price,
