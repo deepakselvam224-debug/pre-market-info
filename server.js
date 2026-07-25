@@ -256,13 +256,13 @@ function fetchYahooQuote(symbol) {
   });
 }
 
-// Fetch Intraday 5m chart from Yahoo Finance
-function fetchYahooIntradayChart(symbol) {
+// Fetch Intraday chart from Yahoo Finance (supports 1m and 5m intervals)
+function fetchYahooIntradayChart(symbol, interval = '1m') {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: 'query1.finance.yahoo.com',
       port: 443,
-      path: `/v8/finance/chart/${encodeURIComponent(symbol)}?interval=5m&range=1d`,
+      path: `/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=1d`,
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -901,7 +901,11 @@ function calculateVWAPStrategy(chartResult, cpr) {
       if (l <= vwap && c >= vwap) state = "LONG_RETEST";
     } else if (state === "LONG_RETEST") {
       if (c > swingHigh) {
-        state = "LONG_TRIGGERED"; entry = swingHigh; sl = vwap; target = swingHigh + (swingHigh - vwap) * 1.5; signalType = "LONG";
+        state = "LONG_TRIGGERED";
+        entry = swingHigh;
+        sl = entry - 0.5; // Natural Gas rule: SL = entry - 0.5
+        target = entry + 1.0; // Natural Gas rule: Target = entry + 1.0 (always 1 Rupee ahead)
+        signalType = "LONG";
       }
     } else if (state === "SHORT_MOMENTUM") {
       legLows.push(l);
@@ -909,7 +913,11 @@ function calculateVWAPStrategy(chartResult, cpr) {
       if (h >= vwap && c <= vwap) state = "SHORT_RETEST";
     } else if (state === "SHORT_RETEST") {
       if (c < swingLow) {
-        state = "SHORT_TRIGGERED"; entry = swingLow; sl = vwap; target = swingLow - (vwap - swingLow) * 1.5; signalType = "SHORT";
+        state = "SHORT_TRIGGERED";
+        entry = swingLow;
+        sl = entry + 0.5; // Natural Gas rule: SL = entry + 0.5
+        target = entry - 1.0; // Natural Gas rule: Target = entry - 1.0 (always 1 Rupee ahead)
+        signalType = "SHORT";
       }
     }
   }
@@ -930,12 +938,14 @@ function calculateVWAPStrategy(chartResult, cpr) {
   return { state, setupType, swingHigh, swingLow, entry, sl, target, signalType, currentVwap, trends };
 }
 
-// Integrated Quote & CPR Analysis function
+// Integrated Quote & CPR Analysis function (scans both 1m and 5m timeframes)
 function getAssetAnalysis(symbol) {
   return Promise.all([
-    fetchYahooIntradayChart(symbol).catch(() => null),
+    fetchYahooIntradayChart(symbol, '1m').catch(() => null),
+    fetchYahooIntradayChart(symbol, '5m').catch(() => null),
     fetchPreviousDayHLC(symbol).catch(() => null)
-  ]).then(([intradayResult, hlc]) => {
+  ]).then(([intraday1m, intraday5m, hlc]) => {
+    const intradayResult = intraday1m || intraday5m;
     if (!intradayResult || !intradayResult.chart || !intradayResult.chart.result) return null;
     
     const meta = intradayResult.chart.result[0].meta;
@@ -946,9 +956,31 @@ function getAssetAnalysis(symbol) {
     
     const cpr = hlc ? calculateCPR(hlc) : null;
     const isCommodity = (symbol === 'NG=F');
-    const strategy = isCommodity
-      ? calculateVWAPStrategy(intradayResult.chart.result[0], cpr)
-      : calculateCPRStrategy(intradayResult.chart.result[0], cpr);
+
+    let strategy;
+    if (isCommodity) {
+      const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateVWAPStrategy(intraday1m.chart.result[0], cpr) : null;
+      const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateVWAPStrategy(intraday5m.chart.result[0], cpr) : null;
+
+      if (strat1m && strat1m.state && strat1m.state.endsWith("TRIGGERED")) {
+        strategy = strat1m;
+      } else if (strat5m && strat5m.state && strat5m.state.endsWith("TRIGGERED")) {
+        strategy = strat5m;
+      } else {
+        strategy = strat1m || strat5m;
+      }
+    } else {
+      const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateCPRStrategy(intraday1m.chart.result[0], cpr) : null;
+      const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateCPRStrategy(intraday5m.chart.result[0], cpr) : null;
+
+      if (strat1m && strat1m.state && strat1m.state.endsWith("TRIGGERED")) {
+        strategy = strat1m;
+      } else if (strat5m && strat5m.state && strat5m.state.endsWith("TRIGGERED")) {
+        strategy = strat5m;
+      } else {
+        strategy = strat1m || strat5m;
+      }
+    }
     
     return {
       price,
