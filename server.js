@@ -650,8 +650,8 @@ function calculateStrategy1(chartResult, cpr) {
   };
 }
 
-// Calculate CPR Strategy 1 (Nifty 50, Bank Nifty, Ethereum)
-function calculateCPRStrategy(chartResult, cpr) {
+// Calculate CPR Strategy 1 (Nifty 50, Bank Nifty)
+function calculateCPRStrategy(chartResult, cpr, assetId = 'nifty') {
   if (!chartResult || !chartResult.indicators || !chartResult.indicators.quote) {
     return { state: "NEUTRAL", setupType: null, swingHigh: null, swingLow: null, entry: null, sl: null, target: null, signalType: null, currentVwap: null, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } };
   }
@@ -689,6 +689,7 @@ function calculateCPRStrategy(chartResult, cpr) {
 
   const cprMin = Math.min(cpr.tc, cpr.bc);
   const cprMax = Math.max(cpr.tc, cpr.bc);
+  const slDistance = (assetId === 'banknifty') ? 20 : 10;
 
   let state = "NEUTRAL";
   let setupType = null;
@@ -782,10 +783,17 @@ function calculateCPRStrategy(chartResult, cpr) {
       if (c > swingHigh) {
         state = "LONG_TRIGGERED";
         entry = swingHigh;
-        if (setupType === 1) { sl = cprMax; target = cpr.r1 > entry ? cpr.r1 : (cpr.r2 > entry ? cpr.r2 : cpr.r3); }
-        else if (setupType === 2) { sl = cpr.s1; target = cprMin; }
-        else if (setupType === 3) { sl = cpr.r1; target = cpr.r2 > entry ? cpr.r2 : cpr.r3; }
         signalType = "LONG";
+        sl = entry - slDistance;
+
+        if (setupType === 1) {
+          target = cpr.r1 > entry ? cpr.r1 : (cpr.r2 > entry ? cpr.r2 : cpr.r3);
+        } else if (setupType === 2) {
+          target = cprMax; // 3rd CPR line (Top CPR line)
+        } else if (setupType === 3) {
+          if (entry >= cpr.r2) target = cpr.r3;
+          else target = cpr.r2;
+        }
       }
     } else if (state === "SHORT_MOMENTUM") {
       legLows.push(l);
@@ -799,10 +807,17 @@ function calculateCPRStrategy(chartResult, cpr) {
       if (c < swingLow) {
         state = "SHORT_TRIGGERED";
         entry = swingLow;
-        if (setupType === 1) { sl = cprMin; target = cpr.s1 < entry ? cpr.s1 : (cpr.s2 < entry ? cpr.s2 : cpr.s3); }
-        else if (setupType === 2) { sl = cpr.r1; target = cprMax; }
-        else if (setupType === 3) { sl = cpr.s1; target = cpr.s2 < entry ? cpr.s2 : cpr.s3; }
         signalType = "SHORT";
+        sl = entry + slDistance;
+
+        if (setupType === 1) {
+          target = cpr.s1 < entry ? cpr.s1 : (cpr.s2 < entry ? cpr.s2 : cpr.s3);
+        } else if (setupType === 2) {
+          target = cprMin; // 1st CPR line (Bottom CPR line)
+        } else if (setupType === 3) {
+          if (entry <= cpr.s2) target = cpr.s3;
+          else target = cpr.s2;
+        }
       }
     }
   }
@@ -955,10 +970,23 @@ function getAssetAnalysis(symbol) {
     const changePercent = (change / prevClose) * 100;
     
     const cpr = hlc ? calculateCPR(hlc) : null;
-    const isCommodity = (symbol === 'NG=F');
 
     let strategy;
-    if (isCommodity) {
+    if (symbol === 'ETH-USD') {
+      // Temporarily disable trade signals for Ethereum as requested
+      strategy = {
+        state: "NEUTRAL",
+        setupType: null,
+        swingHigh: null,
+        swingLow: null,
+        entry: null,
+        sl: null,
+        target: null,
+        signalType: null,
+        currentVwap: price,
+        trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
+      };
+    } else if (symbol === 'NG=F') {
       const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateVWAPStrategy(intraday1m.chart.result[0], cpr) : null;
       const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateVWAPStrategy(intraday5m.chart.result[0], cpr) : null;
 
@@ -970,8 +998,9 @@ function getAssetAnalysis(symbol) {
         strategy = strat1m || strat5m;
       }
     } else {
-      const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateCPRStrategy(intraday1m.chart.result[0], cpr) : null;
-      const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateCPRStrategy(intraday5m.chart.result[0], cpr) : null;
+      const assetId = (symbol === '%5ENSEBANK') ? 'banknifty' : 'nifty';
+      const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateCPRStrategy(intraday1m.chart.result[0], cpr, assetId) : null;
+      const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateCPRStrategy(intraday5m.chart.result[0], cpr, assetId) : null;
 
       if (strat1m && strat1m.state && strat1m.state.endsWith("TRIGGERED")) {
         strategy = strat1m;
