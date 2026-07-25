@@ -63,9 +63,8 @@ body {
   background: rgba(10, 13, 16, 0.85);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: relative;
+  z-index: 10;
 }
 
 .header-logo {
