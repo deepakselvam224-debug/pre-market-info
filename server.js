@@ -930,8 +930,8 @@ function calculateVWAPStrategy(chartResult, cpr) {
       if (c < swingLow) {
         state = "SHORT_TRIGGERED";
         entry = swingLow;
-        sl = entry + 0.5; // Natural Gas rule: SL = entry + 0.5
-        target = entry - 1.0; // Natural Gas rule: Target = entry - 1.0 (always 1 Rupee ahead)
+        sl = entry - 0.5; // Natural Gas rule: SL = entry - 0.5 (e.g. 282.70 -> SL 282.20)
+        target = entry - 1.0; // Natural Gas rule: Target = entry - 1.0 (always 1 Rupee ahead, e.g. 282.70 -> Target 281.70)
         signalType = "SHORT";
       }
     }
@@ -1440,9 +1440,9 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
   // Sanitize existing trade log entries to ensure Natural Gas (+1 target, -0.5 SL), Nifty, and Bank Nifty target/SL rules are strictly enforced
   tradeLog.forEach(t => {
     if (t.asset === 'MCX NATURAL GAS') {
+      const correctSL = parseFloat((t.entry - 0.5).toFixed(2));
       if (t.direction === 'SHORT') {
         const correctTarget = parseFloat((t.entry - 1.0).toFixed(2));
-        const correctSL = parseFloat((t.entry + 0.5).toFixed(2));
         if (t.target !== correctTarget || t.sl !== correctSL) {
           t.target = correctTarget;
           t.sl = correctSL;
@@ -1450,7 +1450,6 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
         }
       } else if (t.direction === 'LONG') {
         const correctTarget = parseFloat((t.entry + 1.0).toFixed(2));
-        const correctSL = parseFloat((t.entry - 0.5).toFixed(2));
         if (t.target !== correctTarget || t.sl !== correctSL) {
           t.target = correctTarget;
           t.sl = correctSL;
@@ -1491,7 +1490,7 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
 
         if (name === 'MCX NATURAL GAS') {
           calculatedTarget = s.signalType === 'LONG' ? (s.entry + 1.0) : (s.entry - 1.0);
-          calculatedSL = s.signalType === 'LONG' ? (s.entry - 0.5) : (s.entry + 0.5);
+          calculatedSL = (s.entry - 0.5);
         }
 
         tradeLog.push({
