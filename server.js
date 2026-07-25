@@ -1434,8 +1434,44 @@ function saveTradeLogToFile() {
   }
 }
 
+// Helper to check if market is open for an asset (closed on Saturdays & Sundays)
+function isMarketOpen(assetId) {
+  const now = new Date();
+  const kolkataTimeStr = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+  const kolkataDate = new Date(kolkataTimeStr);
+
+  const day = kolkataDate.getDay(); // 0 = Sunday, 6 = Saturday
+  if (day === 0 || day === 6) {
+    // Markets strictly closed on Saturdays and Sundays!
+    return false;
+  }
+
+  const hours = kolkataDate.getHours();
+  const minutes = kolkataDate.getMinutes();
+  const timeInMinutes = hours * 60 + minutes;
+
+  if (assetId === 'nifty' || assetId === 'banknifty') {
+    // Indian Equities market hours: 09:15 AM (555 min) to 03:30 PM (930 min) IST
+    return (timeInMinutes >= 555 && timeInMinutes <= 930);
+  } else if (assetId === 'gas') {
+    // MCX Commodity market hours: 09:00 AM (540 min) to 11:30 PM (1410 min) IST
+    return (timeInMinutes >= 540 && timeInMinutes <= 1410);
+  }
+
+  return false;
+}
+
 function updateTradeLog(nifty, banknifty, gas, eth) {
   let logChanged = false;
+
+  // Purge any invalid weekend trade logs (e.g. trades logged on Saturday/Sunday when market is closed)
+  const kolkataDay = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getDay();
+  if (kolkataDay === 0 || kolkataDay === 6) {
+    if (tradeLog.length > 0) {
+      tradeLog = [];
+      logChanged = true;
+    }
+  }
 
   // Sanitize existing trade log entries to ensure Natural Gas (+1 target, -0.5 SL), Nifty, and Bank Nifty target/SL rules are strictly enforced
   tradeLog.forEach(t => {
@@ -1476,6 +1512,9 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
   });
 
   const checkLogTrigger = (id, name, data) => {
+    // Strictly disable new trade logging when markets are closed (Saturdays, Sundays & outside trading hours)
+    if (!isMarketOpen(id)) return;
+
     if (!data || !data.strategy) return;
     const s = data.strategy;
     if (s.state === 'LONG_TRIGGERED' || s.state === 'SHORT_TRIGGERED') {
