@@ -700,6 +700,8 @@ function calculateCPRStrategy(chartResult, cpr, assetId = 'nifty') {
   let sl = null;
   let target = null;
   let signalType = null;
+  let momentumBarIdx = -1;
+  let retestBarIdx = -1;
 
   let legHighs = [];
   let legLows = [];
@@ -752,47 +754,50 @@ function calculateCPRStrategy(chartResult, cpr, assetId = 'nifty') {
     if (state === "NEUTRAL") {
       if (c > cprMax) {
         if (c > cpr.r1) {
-          state = "LONG_MOMENTUM"; setupType = 3; legHighs = [h]; swingHigh = h;
+          state = "LONG_MOMENTUM"; setupType = 3; legHighs = [h]; swingHigh = h; momentumBarIdx = i;
         } else {
-          state = "LONG_MOMENTUM"; setupType = 1; legHighs = [h]; swingHigh = h;
+          state = "LONG_MOMENTUM"; setupType = 1; legHighs = [h]; swingHigh = h; momentumBarIdx = i;
         }
       } else if (c < cprMin) {
         if (c < cpr.s1) {
-          state = "SHORT_MOMENTUM"; setupType = 3; legLows = [l]; swingLow = l;
+          state = "SHORT_MOMENTUM"; setupType = 3; legLows = [l]; swingLow = l; momentumBarIdx = i;
         } else {
-          state = "SHORT_MOMENTUM"; setupType = 1; legLows = [l]; swingLow = l;
+          state = "SHORT_MOMENTUM"; setupType = 1; legLows = [l]; swingLow = l; momentumBarIdx = i;
         }
       }
 
       if (c < cprMin && l <= cpr.s1 && c > cpr.s1) {
-        state = "LONG_MOMENTUM"; setupType = 2; legHighs = [h]; swingHigh = h;
+        state = "LONG_MOMENTUM"; setupType = 2; legHighs = [h]; swingHigh = h; momentumBarIdx = i;
       } else if (c > cprMax && h >= cpr.r1 && c < cpr.r1) {
-        state = "SHORT_MOMENTUM"; setupType = 2; legLows = [l]; swingLow = l;
+        state = "SHORT_MOMENTUM"; setupType = 2; legLows = [l]; swingLow = l; momentumBarIdx = i;
       }
     } else {
       // Invalidation / direction flip
       if (state.startsWith("LONG") && !state.endsWith("TRIGGERED")) {
         if (c < cprMin) {
-          state = "SHORT_MOMENTUM"; setupType = 1; legLows = [l]; swingLow = l; swingHigh = null;
+          state = "SHORT_MOMENTUM"; setupType = 1; legLows = [l]; swingLow = l; swingHigh = null; momentumBarIdx = i;
         }
       } else if (state.startsWith("SHORT") && !state.endsWith("TRIGGERED")) {
         if (c > cprMax) {
-          state = "LONG_MOMENTUM"; setupType = 1; legHighs = [h]; swingHigh = h; swingLow = null;
+          state = "LONG_MOMENTUM"; setupType = 1; legHighs = [h]; swingHigh = h; swingLow = null; momentumBarIdx = i;
         }
       }
     }
 
-    // Process Momentum & Retests
+    // Process Momentum & Retests with strict multi-bar sequence requirement
     if (state === "LONG_MOMENTUM") {
       legHighs.push(h);
       swingHigh = Math.max(...legHighs);
 
-      if (setupType === 1 && l <= cprMax && c >= cprMax) state = "LONG_RETEST";
-      else if (setupType === 2 && l <= cpr.s1 && c >= cpr.s1) state = "LONG_RETEST";
-      else if (setupType === 3 && l <= cpr.r1 && c >= cpr.r1) state = "LONG_RETEST";
+      const levelToTest = setupType === 1 ? cprMax : (setupType === 2 ? cpr.s1 : cpr.r1);
+      // Retest MUST occur on a separate bar AFTER momentum bar
+      if (i > momentumBarIdx + 1 && l <= levelToTest && c >= cprMin) {
+        state = "LONG_RETEST";
+        retestBarIdx = i;
+      }
     } else if (state === "LONG_RETEST") {
-      // Freeze swingHigh and check breakout
-      if (c > swingHigh) {
+      // Breakout MUST occur on a separate bar AFTER retest bar
+      if (i > retestBarIdx && c > swingHigh) {
         state = "LONG_TRIGGERED";
         entry = swingHigh;
         signalType = "LONG";
@@ -811,12 +816,15 @@ function calculateCPRStrategy(chartResult, cpr, assetId = 'nifty') {
       legLows.push(l);
       swingLow = Math.min(...legLows);
 
-      if (setupType === 1 && h >= cprMin && c <= cprMin) state = "SHORT_RETEST";
-      else if (setupType === 2 && h >= cpr.r1 && c <= cpr.r1) state = "SHORT_RETEST";
-      else if (setupType === 3 && h >= cpr.s1 && c <= cpr.s1) state = "SHORT_RETEST";
+      const levelToTest = setupType === 1 ? cprMin : (setupType === 2 ? cpr.r1 : cpr.s1);
+      // Retest MUST occur on a separate bar AFTER momentum bar
+      if (i > momentumBarIdx + 1 && h >= levelToTest && c <= cprMax) {
+        state = "SHORT_RETEST";
+        retestBarIdx = i;
+      }
     } else if (state === "SHORT_RETEST") {
-      // Freeze swingLow and check breakdown
-      if (c < swingLow) {
+      // Breakdown MUST occur on a separate bar AFTER retest bar
+      if (i > retestBarIdx && c < swingLow) {
         state = "SHORT_TRIGGERED";
         entry = swingLow;
         signalType = "SHORT";
