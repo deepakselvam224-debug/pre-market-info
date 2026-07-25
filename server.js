@@ -656,6 +656,7 @@ function calculateCPRStrategy(chartResult, cpr, assetId = 'nifty') {
     return { state: "NEUTRAL", setupType: null, swingHigh: null, swingLow: null, entry: null, sl: null, target: null, signalType: null, currentVwap: null, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } };
   }
 
+  const timestamps = chartResult.timestamp || [];
   const quote = chartResult.indicators.quote[0];
   const highs = quote.high || [];
   const lows = quote.low || [];
@@ -709,6 +710,17 @@ function calculateCPRStrategy(chartResult, cpr, assetId = 'nifty') {
     const l = lows[i];
 
     if (c === null || h === null || l === null) continue;
+
+    // Filter out pre-market candles before 09:15 AM IST for Nifty 50 and Bank Nifty
+    if (timestamps[i]) {
+      const dateObj = new Date(timestamps[i] * 1000);
+      const istTimeStr = dateObj.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour12: false, hour: '2-digit', minute: '2-digit' });
+      const parts = istTimeStr.split(':');
+      const timeInMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      if (timeInMinutes < 555) { // 555 min = 09:15 AM IST
+        continue;
+      }
+    }
 
     // Reset if active trade hits Target or SL
     if (state === "LONG_TRIGGERED") {
@@ -844,6 +856,7 @@ function calculateVWAPStrategy(chartResult, cpr) {
     return { state: "NEUTRAL", setupType: null, swingHigh: null, swingLow: null, entry: null, sl: null, target: null, signalType: null, currentVwap: null, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } };
   }
 
+  const timestamps = chartResult.timestamp || [];
   const quote = chartResult.indicators.quote[0];
   const highs = quote.high || [];
   const lows = quote.low || [];
@@ -889,6 +902,17 @@ function calculateVWAPStrategy(chartResult, cpr) {
     const vwap = vwaps[i];
 
     if (c === null || vwap === null) continue;
+
+    // Filter out pre-market candles before 09:00 AM IST for MCX Natural Gas
+    if (timestamps[i]) {
+      const dateObj = new Date(timestamps[i] * 1000);
+      const istTimeStr = dateObj.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour12: false, hour: '2-digit', minute: '2-digit' });
+      const parts = istTimeStr.split(':');
+      const timeInMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      if (timeInMinutes < 540) { // 540 min = 09:00 AM IST
+        continue;
+      }
+    }
 
     // Reset on Target or SL
     if (state === "LONG_TRIGGERED") {
