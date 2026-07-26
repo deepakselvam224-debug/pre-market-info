@@ -726,15 +726,20 @@ function calculateCPRStrategy(chartResult, cpr, assetId = 'nifty') {
 
     // Reset if active trade hits Target or SL
     if (state === "LONG_TRIGGERED") {
-      if (target && c >= target) {
+      if (target && h >= target) {
         state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
-      } else if (sl && c <= sl) {
+      } else if (sl && l <= sl) {
         state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
       }
     } else if (state === "SHORT_TRIGGERED") {
-      if (target && c <= target) {
+      if (target && l <= target) {
         state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
-      } else if (sl && c >= sl) {
+      } else if (sl && h >= sl) {
+        state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
+      }
+    }// Retest Expiration check (Retest MUST be followed by breakout/breakdown within 10 candles, otherwise invalid!)
+    if (state.endsWith("_RETEST")) {
+      if (i - retestBarIdx > 10) {
         state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
       }
     }
@@ -922,13 +927,20 @@ function calculateVWAPStrategy(chartResult, cpr) {
       }
     }
 
-    // Reset on Target or SL
+    // Reset on Target or SL (Intrabar High / Low checks)
     if (state === "LONG_TRIGGERED") {
-      if (target && c >= target) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
-      else if (sl && c <= sl) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+      if (target && h >= target) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+      else if (sl && l <= sl) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
     } else if (state === "SHORT_TRIGGERED") {
-      if (target && c <= target) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
-      else if (sl && c >= sl) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+      if (target && l <= target) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+      else if (sl && h >= sl) { state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = []; }
+    }
+
+    // Retest Expiration check (Retest MUST be followed by breakout/breakdown within 10 candles)
+    if (state.endsWith("_RETEST")) {
+      if (i - retestBarIdx > 10) {
+        state = "NEUTRAL"; setupType = null; swingHigh = null; swingLow = null; entry = null; sl = null; target = null; signalType = null; legHighs = []; legLows = [];
+      }
     }
 
     if (state === "NEUTRAL") {
@@ -945,7 +957,7 @@ function calculateVWAPStrategy(chartResult, cpr) {
     if (state === "LONG_MOMENTUM") {
       legHighs.push(h);
       swingHigh = Math.max(...legHighs);
-      if (l <= vwap && c >= vwap) state = "LONG_RETEST";
+      if (l <= vwap && c >= vwap) { state = "LONG_RETEST"; retestBarIdx = i; }
     } else if (state === "LONG_RETEST") {
       if (c > swingHigh) {
         state = "LONG_TRIGGERED";
@@ -957,7 +969,7 @@ function calculateVWAPStrategy(chartResult, cpr) {
     } else if (state === "SHORT_MOMENTUM") {
       legLows.push(l);
       swingLow = Math.min(...legLows);
-      if (h >= vwap && c <= vwap) state = "SHORT_RETEST";
+      if (h >= vwap && c <= vwap) { state = "SHORT_RETEST"; retestBarIdx = i; }
     } else if (state === "SHORT_RETEST") {
       if (c < swingLow) {
         state = "SHORT_TRIGGERED";
