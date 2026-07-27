@@ -1053,14 +1053,22 @@ function getAssetAnalysis(symbol) {
         strategy = strat1m || strat5m;
       }
 
-      // Convert Natural Gas strategy prices to MCX INR scale
+      // Convert Natural Gas strategy prices to MCX INR scale and apply exact 1.0 Rupee SL / 2.0 Rupees Target
       if (strategy) {
         if (strategy.entry) strategy.entry = strategy.entry * GAS_MCX_MULTIPLIER;
-        if (strategy.sl) strategy.sl = strategy.sl * GAS_MCX_MULTIPLIER;
-        if (strategy.target) strategy.target = strategy.target * GAS_MCX_MULTIPLIER;
         if (strategy.swingHigh) strategy.swingHigh = strategy.swingHigh * GAS_MCX_MULTIPLIER;
         if (strategy.swingLow) strategy.swingLow = strategy.swingLow * GAS_MCX_MULTIPLIER;
         if (strategy.currentVwap) strategy.currentVwap = strategy.currentVwap * GAS_MCX_MULTIPLIER;
+
+        if (strategy.entry) {
+          if (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED") {
+            strategy.sl = strategy.entry - 1.0; // e.g. Entry 230 -> SL 229
+            strategy.target = strategy.entry + 2.0; // e.g. Entry 230 -> Target 232
+          } else if (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED") {
+            strategy.sl = strategy.entry + 1.0; // e.g. Entry 230 -> SL 231
+            strategy.target = strategy.entry - 2.0; // e.g. Entry 230 -> Target 228
+          }
+        }
       }
     } else {
       const assetId = (symbol === '%5ENSEBANK') ? 'banknifty' : 'nifty';
