@@ -962,8 +962,8 @@ function calculateVWAPStrategy(chartResult, cpr) {
       if (c > swingHigh) {
         state = "LONG_TRIGGERED";
         entry = swingHigh;
-        sl = entry - 0.5; // Natural Gas rule: SL = entry - 0.5
-        target = entry + 1.0; // Natural Gas rule: Target = entry + 1.0 (always 1 Rupee ahead)
+        sl = entry - 1.0; // Natural Gas rule: SL = entry - 1.0 (1 Rupee risk)
+        target = entry + 2.0; // Natural Gas rule: Target = entry + 2.0 (2 Rupees target)
         signalType = "LONG";
       }
     } else if (state === "SHORT_MOMENTUM") {
@@ -974,8 +974,8 @@ function calculateVWAPStrategy(chartResult, cpr) {
       if (c < swingLow) {
         state = "SHORT_TRIGGERED";
         entry = swingLow;
-        sl = entry - 0.5; // Natural Gas rule: SL = entry - 0.5 (e.g. 282.70 -> SL 282.20)
-        target = entry - 1.0; // Natural Gas rule: Target = entry - 1.0 (always 1 Rupee ahead, e.g. 282.70 -> Target 281.70)
+        sl = entry + 1.0; // Natural Gas rule: SL = entry + 1.0 (1 Rupee risk)
+        target = entry - 2.0; // Natural Gas rule: Target = entry - 2.0 (2 Rupees target)
         signalType = "SHORT";
       }
     }
@@ -1007,9 +1007,20 @@ function getAssetAnalysis(symbol) {
     const intradayResult = intraday1m || intraday5m;
     if (!intradayResult || !intradayResult.chart || !intradayResult.chart.result) return null;
     
-    const meta = intradayResult.chart.result[0].meta;
-    const price = meta.regularMarketPrice;
-    const prevClose = meta.chartPreviousClose || price;
+    let price = meta.regularMarketPrice;
+    let prevClose = meta.chartPreviousClose || price;
+    let high = meta.regularMarketDayHigh || price;
+    let low = meta.regularMarketDayLow || price;
+
+    // Convert Natural Gas from USD ($2.91) to MCX Indian Rupees (₹280.60)
+    const GAS_MCX_MULTIPLIER = 96.425;
+    if (symbol === 'NG=F') {
+      price = price * GAS_MCX_MULTIPLIER;
+      prevClose = prevClose * GAS_MCX_MULTIPLIER;
+      high = high * GAS_MCX_MULTIPLIER;
+      low = low * GAS_MCX_MULTIPLIER;
+    }
+
     const change = price - prevClose;
     const changePercent = (change / prevClose) * 100;
     
@@ -1041,6 +1052,16 @@ function getAssetAnalysis(symbol) {
       } else {
         strategy = strat1m || strat5m;
       }
+
+      // Convert Natural Gas strategy prices to MCX INR scale
+      if (strategy) {
+        if (strategy.entry) strategy.entry = strategy.entry * GAS_MCX_MULTIPLIER;
+        if (strategy.sl) strategy.sl = strategy.sl * GAS_MCX_MULTIPLIER;
+        if (strategy.target) strategy.target = strategy.target * GAS_MCX_MULTIPLIER;
+        if (strategy.swingHigh) strategy.swingHigh = strategy.swingHigh * GAS_MCX_MULTIPLIER;
+        if (strategy.swingLow) strategy.swingLow = strategy.swingLow * GAS_MCX_MULTIPLIER;
+        if (strategy.currentVwap) strategy.currentVwap = strategy.currentVwap * GAS_MCX_MULTIPLIER;
+      }
     } else {
       const assetId = (symbol === '%5ENSEBANK') ? 'banknifty' : 'nifty';
       const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateCPRStrategy(intraday1m.chart.result[0], cpr, assetId) : null;
@@ -1059,8 +1080,8 @@ function getAssetAnalysis(symbol) {
       price,
       change,
       changePercent,
-      high: meta.regularMarketDayHigh || price,
-      low: meta.regularMarketDayLow || price,
+      high,
+      low,
       prevClose,
       cpr,
       strategy
