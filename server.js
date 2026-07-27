@@ -1053,7 +1053,7 @@ function getAssetAnalysis(symbol) {
         strategy = strat1m || strat5m;
       }
 
-      // Convert Natural Gas strategy prices to MCX INR scale and apply exact 1.0 Rupee SL / 2.0 Rupees Target
+      // Convert Natural Gas strategy prices to MCX INR scale and apply Multi-Timeframe Guarded Step-Trailing Runner Strategy
       if (strategy) {
         if (strategy.entry) strategy.entry = strategy.entry * GAS_MCX_MULTIPLIER;
         if (strategy.swingHigh) strategy.swingHigh = strategy.swingHigh * GAS_MCX_MULTIPLIER;
@@ -1061,12 +1061,59 @@ function getAssetAnalysis(symbol) {
         if (strategy.currentVwap) strategy.currentVwap = strategy.currentVwap * GAS_MCX_MULTIPLIER;
 
         if (strategy.entry) {
-          if (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED") {
-            strategy.sl = strategy.entry - 1.0; // e.g. Entry 230 -> SL 229
-            strategy.target = strategy.entry + 2.0; // e.g. Entry 230 -> Target 232
-          } else if (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED") {
-            strategy.sl = strategy.entry + 1.0; // e.g. Entry 230 -> SL 231
-            strategy.target = strategy.entry - 2.0; // e.g. Entry 230 -> Target 228
+          const t = strategy.trends || {};
+          const isLong = (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED");
+          const isShort = (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED");
+
+          // Higher Timeframe Alignment Guard (5m, 15m, 1h must all match position direction)
+          const isAligned = isLong ? (t['5m'] === 'bull' && t['15m'] === 'bull' && t['1h'] === 'bull')
+                                   : (t['5m'] === 'bear' && t['15m'] === 'bear' && t['1h'] === 'bear');
+
+          if (isLong) {
+            let baseSL = strategy.entry - 1.0;
+            let baseTarget = strategy.entry + 2.0;
+
+            if (isAligned && price >= strategy.entry + 6.0) {
+              // Step 3 Trailing Extension (3x Target: +6.0 Rupees)
+              strategy.sl = strategy.entry + 6.0;
+              strategy.target = strategy.entry + 6.0;
+              strategy.trailingStep = "Step 3 (3x Target: +6.0 ₹ Trailed)";
+            } else if (isAligned && price >= strategy.entry + 4.0) {
+              // Step 2 Trailing Extension (2x Target: +4.0 Rupees)
+              strategy.sl = strategy.entry + 4.0;
+              strategy.target = strategy.entry + 4.0;
+              strategy.trailingStep = "Step 2 (2x Target: +4.0 ₹ Trailed)";
+            } else if (price >= strategy.entry + 2.0) {
+              // Step 1 Trailing (1x Target: +2.0 Rupees Breakeven Lock)
+              strategy.sl = strategy.entry + 2.0;
+              strategy.target = strategy.entry + 2.0;
+              strategy.trailingStep = "Step 1 (1x Target: +2.0 ₹ Locked)";
+            } else {
+              strategy.sl = baseSL;
+              strategy.target = baseTarget;
+              strategy.trailingStep = "Base Target (+2.0 ₹)";
+            }
+          } else if (isShort) {
+            let baseSL = strategy.entry + 1.0;
+            let baseTarget = strategy.entry - 2.0;
+
+            if (isAligned && price <= strategy.entry - 6.0) {
+              strategy.sl = strategy.entry - 6.0;
+              strategy.target = strategy.entry - 6.0;
+              strategy.trailingStep = "Step 3 (3x Target: -6.0 ₹ Trailed)";
+            } else if (isAligned && price <= strategy.entry - 4.0) {
+              strategy.sl = strategy.entry - 4.0;
+              strategy.target = strategy.entry - 4.0;
+              strategy.trailingStep = "Step 2 (2x Target: -4.0 ₹ Trailed)";
+            } else if (price <= strategy.entry - 2.0) {
+              strategy.sl = strategy.entry - 2.0;
+              strategy.target = strategy.entry - 2.0;
+              strategy.trailingStep = "Step 1 (1x Target: -2.0 ₹ Locked)";
+            } else {
+              strategy.sl = baseSL;
+              strategy.target = baseTarget;
+              strategy.trailingStep = "Base Target (-2.0 ₹)";
+            }
           }
         }
       }
