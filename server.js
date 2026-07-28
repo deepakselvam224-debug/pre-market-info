@@ -1649,7 +1649,8 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
       const exists = tradeLog.some(t => t.tradeId === tradeId || (t.asset === name && t.status === 'Active'));
       if (!exists) {
         const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
-        const timeStr = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+        // Use exact market candle timestamp if available, falling back to current IST time
+        const timeStr = (s && s.triggerTime) ? s.triggerTime : new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
         
         let calculatedTarget = s.target;
         let calculatedSL = s.sl;
