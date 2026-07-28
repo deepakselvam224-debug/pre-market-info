@@ -1597,19 +1597,20 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
     }
   }
 
-  // Sanitize existing trade log entries to ensure Natural Gas (+1 target, -0.5 SL), Nifty, and Bank Nifty target/SL rules are strictly enforced
+  // Sanitize existing trade log entries to ensure Natural Gas (+2.0 target, -1.0 SL for LONG; -2.0 target, +1.0 SL for SHORT), Nifty, and Bank Nifty target/SL rules are strictly enforced
   tradeLog.forEach(t => {
     if (t.asset === 'MCX NATURAL GAS') {
-      const correctSL = parseFloat((t.entry - 0.5).toFixed(2));
       if (t.direction === 'SHORT') {
-        const correctTarget = parseFloat((t.entry - 1.0).toFixed(2));
+        const correctTarget = parseFloat((t.entry - 2.0).toFixed(2));
+        const correctSL = parseFloat((t.entry + 1.0).toFixed(2));
         if (t.target !== correctTarget || t.sl !== correctSL) {
           t.target = correctTarget;
           t.sl = correctSL;
           logChanged = true;
         }
       } else if (t.direction === 'LONG') {
-        const correctTarget = parseFloat((t.entry + 1.0).toFixed(2));
+        const correctTarget = parseFloat((t.entry + 2.0).toFixed(2));
+        const correctSL = parseFloat((t.entry - 1.0).toFixed(2));
         if (t.target !== correctTarget || t.sl !== correctSL) {
           t.target = correctTarget;
           t.sl = correctSL;
@@ -1642,8 +1643,10 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
     if (!data || !data.strategy) return;
     const s = data.strategy;
     if (s.state === 'LONG_TRIGGERED' || s.state === 'SHORT_TRIGGERED') {
-      const tradeId = `${id}_${s.signalType}_${s.entry.toFixed(1)}`;
-      const exists = tradeLog.some(t => t.tradeId === tradeId);
+      const todayDateKey = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+      // Strict 1-Trade-Per-Setup Lock: deduplicate by asset ID, signal direction, and current setup session
+      const tradeId = `${id}_${s.signalType}_${s.state}_${todayDateKey}`;
+      const exists = tradeLog.some(t => t.tradeId === tradeId || (t.asset === name && t.status === 'Active'));
       if (!exists) {
         const todayStr = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
         const timeStr = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
@@ -1652,8 +1655,8 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
         let calculatedSL = s.sl;
 
         if (name === 'MCX NATURAL GAS') {
-          calculatedTarget = s.signalType === 'LONG' ? (s.entry + 1.0) : (s.entry - 1.0);
-          calculatedSL = (s.entry - 0.5);
+          calculatedTarget = s.signalType === 'LONG' ? (s.entry + 2.0) : (s.entry - 2.0);
+          calculatedSL = s.signalType === 'LONG' ? (s.entry - 1.0) : (s.entry + 1.0);
         }
 
         tradeLog.push({
