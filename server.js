@@ -989,8 +989,8 @@ function getAssetAnalysis(symbol) {
     let high = meta.regularMarketDayHigh || price;
     let low = meta.regularMarketDayLow || price;
 
-    // Convert Natural Gas from USD ($2.91) to MCX Indian Rupees (₹280.60)
-    const GAS_MCX_MULTIPLIER = 96.425;
+    // Convert Natural Gas from USD Henry Hub ($2.761) to MCX Indian Rupees scale (₹260.60) matching TradingView
+    const GAS_MCX_MULTIPLIER = 94.38;
     if (symbol === 'NG=F') {
       price = price * GAS_MCX_MULTIPLIER;
       prevClose = prevClose * GAS_MCX_MULTIPLIER;
