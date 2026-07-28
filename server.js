@@ -1047,22 +1047,22 @@ function getAssetAnalysis(symbol) {
                                    : (t['5m'] === 'bear' && t['15m'] === 'bear' && t['1h'] === 'bear');
 
           if (isLong) {
-            let baseSL = strategy.entry - 1.0;
-            let baseTarget = strategy.entry + 2.0;
+            let baseSL = strategy.entry - 1.0;     // e.g. Entry 266.23 -> SL 265.23
+            let baseTarget = strategy.entry + 2.0; // e.g. Entry 266.23 -> Target 268.23
 
             if (isAligned && price >= strategy.entry + 6.0) {
               // Step 3 Trailing Extension (3x Target: +6.0 Rupees)
-              strategy.sl = strategy.entry + 6.0;
+              strategy.sl = strategy.entry + 4.0;
               strategy.target = strategy.entry + 6.0;
               strategy.trailingStep = "Step 3 (3x Target: +6.0 ₹ Trailed)";
             } else if (isAligned && price >= strategy.entry + 4.0) {
               // Step 2 Trailing Extension (2x Target: +4.0 Rupees)
-              strategy.sl = strategy.entry + 4.0;
+              strategy.sl = strategy.entry + 2.0;
               strategy.target = strategy.entry + 4.0;
               strategy.trailingStep = "Step 2 (2x Target: +4.0 ₹ Trailed)";
             } else if (price >= strategy.entry + 2.0) {
               // Step 1 Trailing (1x Target: +2.0 Rupees Breakeven Lock)
-              strategy.sl = strategy.entry + 2.0;
+              strategy.sl = strategy.entry; // Breakeven SL
               strategy.target = strategy.entry + 2.0;
               strategy.trailingStep = "Step 1 (1x Target: +2.0 ₹ Locked)";
             } else {
@@ -1071,19 +1071,22 @@ function getAssetAnalysis(symbol) {
               strategy.trailingStep = "Base Target (+2.0 ₹)";
             }
           } else if (isShort) {
-            let baseSL = strategy.entry + 1.0;
-            let baseTarget = strategy.entry - 2.0;
+            let baseSL = strategy.entry + 1.0;     // e.g. Entry 266.23 -> SL 267.23
+            let baseTarget = strategy.entry - 2.0; // e.g. Entry 266.23 -> Target 264.23
 
             if (isAligned && price <= strategy.entry - 6.0) {
-              strategy.sl = strategy.entry - 6.0;
+              // Step 3 Trailing Extension (3x Target: -6.0 Rupees)
+              strategy.sl = strategy.entry - 4.0;
               strategy.target = strategy.entry - 6.0;
               strategy.trailingStep = "Step 3 (3x Target: -6.0 ₹ Trailed)";
             } else if (isAligned && price <= strategy.entry - 4.0) {
-              strategy.sl = strategy.entry - 4.0;
+              // Step 2 Trailing Extension (2x Target: -4.0 Rupees)
+              strategy.sl = strategy.entry - 2.0;
               strategy.target = strategy.entry - 4.0;
               strategy.trailingStep = "Step 2 (2x Target: -4.0 ₹ Trailed)";
             } else if (price <= strategy.entry - 2.0) {
-              strategy.sl = strategy.entry - 2.0;
+              // Step 1 Trailing (1x Target: -2.0 Rupees Breakeven Lock)
+              strategy.sl = strategy.entry; // Breakeven SL
               strategy.target = strategy.entry - 2.0;
               strategy.trailingStep = "Step 1 (1x Target: -2.0 ₹ Locked)";
             } else {
