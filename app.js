@@ -301,9 +301,14 @@ function updateTradeLogTable(tradeLog) {
         const isEth = t.asset.includes("ETH");
         const formatVal = (v) => formatIndexPrice(v, (isGas || isEth));
 
+        const entryTimeStr = t.entryTime || (t.time ? t.time.split(',')[1] || t.time : '');
+        const timeHeaderHtml = (t.exitTime && t.exitTime !== 'Active ⏳') 
+          ? `<span class="trade-time">In: ${entryTimeStr.trim()} ➔ Out: ${t.exitTime}</span>` 
+          : `<span class="trade-time">${t.time}</span>`;
+
         cardDiv.innerHTML = `
           <div class="trade-card-header">
-            <span class="trade-time">${t.time}</span>
+            ${timeHeaderHtml}
             <span class="trade-setup-badge">${t.setup}</span>
           </div>
           <div class="trade-card-main">

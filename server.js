@@ -1663,6 +1663,8 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
         tradeLog.push({
           tradeId,
           time: `${todayStr}, ${timeStr}`,
+          entryTime: timeStr,
+          exitTime: 'Active ⏳',
           asset: name,
           setup: s.setupType ? `Setup ${s.setupType}` : 'VWAP Retest',
           direction: s.signalType,
@@ -1709,6 +1711,7 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
         }
         if (newStatus !== 'Active') {
           t.status = newStatus;
+          t.exitTime = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
           logChanged = true;
         }
       }
