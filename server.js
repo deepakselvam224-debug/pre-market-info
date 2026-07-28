@@ -973,8 +973,120 @@ function calculateVWAPStrategy(chartResult, cpr) {
   return { state, setupType, swingHigh, swingLow, entry, sl, target, signalType, currentVwap, trends };
 }
 
+// Direct TradingView Scanner Fetcher for MCX Indian Natural Gas Contract (MCX:NATURALGAS1!)
+function fetchTradingViewMCXGas() {
+  return new Promise((resolve, reject) => {
+    const postData = JSON.stringify({
+      symbols: {
+        tickers: ["MCX:NATURALGAS1!"]
+      },
+      columns: ["close", "change", "change_abs", "high", "low", "open", "volume", "VWAP"]
+    });
+
+    const options = {
+      hostname: 'scanner.tradingview.com',
+      port: 443,
+      path: '/futures/scan',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed && parsed.data && parsed.data[0] && parsed.data[0].d) {
+            const d = parsed.data[0].d;
+            const close = d[0];
+            const changePercent = d[1];
+            const changeAbs = d[2];
+            const high = d[3];
+            const low = d[4];
+            const open = d[5];
+            const volume = d[6];
+            const vwap = d[7] || close;
+
+            resolve({
+              price: close,
+              change: changeAbs,
+              changePercent: changePercent,
+              high: high,
+              low: low,
+              prevClose: close - changeAbs,
+              vwap: vwap
+            });
+          } else {
+            reject(new Error("TradingView empty response"));
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
+  });
+}
+
 // Integrated Quote & CPR Analysis function (scans both 1m and 5m timeframes)
 function getAssetAnalysis(symbol) {
+  if (symbol === 'NG=F') {
+    return fetchTradingViewMCXGas().then(tvGas => {
+      return Promise.all([
+        fetchYahooIntradayChart(symbol, '1m').catch(() => null),
+        fetchPreviousDayHLC(symbol).catch(() => null)
+      ]).then(([intraday1m, hlc]) => {
+        const cpr = hlc ? calculateCPR(hlc) : null;
+        let strategy = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateVWAPStrategy(intraday1m.chart.result[0], cpr) : null;
+
+        if (strategy && intraday1m && intraday1m.chart && intraday1m.chart.result && intraday1m.chart.result[0].meta) {
+          const rawPrice = intraday1m.chart.result[0].meta.regularMarketPrice || 2.75;
+          const dynamicMultiplier = tvGas.price / rawPrice;
+          
+          if (strategy.entry) strategy.entry = strategy.entry * dynamicMultiplier;
+          if (strategy.swingHigh) strategy.swingHigh = strategy.swingHigh * dynamicMultiplier;
+          if (strategy.swingLow) strategy.swingLow = strategy.swingLow * dynamicMultiplier;
+          strategy.currentVwap = tvGas.vwap;
+
+          if (strategy.entry) {
+            const isLong = (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED");
+            const isShort = (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED");
+
+            if (isLong) {
+              strategy.sl = strategy.entry - 1.0;     // e.g. Entry 259.1 -> SL 258.1
+              strategy.target = strategy.entry + 2.0; // e.g. Entry 259.1 -> Target 261.1
+            } else if (isShort) {
+              strategy.sl = strategy.entry + 1.0;     // e.g. Entry 259.1 -> SL 260.1
+              strategy.target = strategy.entry - 2.0; // e.g. Entry 259.1 -> Target 257.1
+            }
+          }
+        }
+
+        return {
+          price: tvGas.price,
+          change: tvGas.change,
+          changePercent: tvGas.changePercent,
+          high: tvGas.high,
+          low: tvGas.low,
+          prevClose: tvGas.prevClose,
+          cpr: cpr,
+          strategy: strategy
+        };
+      });
+    }).catch(err => {
+      console.error("TradingView direct MCX fetch failed, using fallback:", err.message);
+      return null;
+    });
+  }
+
   return Promise.all([
     fetchYahooIntradayChart(symbol, '1m').catch(() => null),
     fetchYahooIntradayChart(symbol, '5m').catch(() => null),
@@ -988,15 +1100,6 @@ function getAssetAnalysis(symbol) {
     let prevClose = meta.chartPreviousClose || price;
     let high = meta.regularMarketDayHigh || price;
     let low = meta.regularMarketDayLow || price;
-
-    // Convert Natural Gas from USD Henry Hub ($2.761) to MCX Indian Rupees scale (₹260.60) matching TradingView
-    const GAS_MCX_MULTIPLIER = 94.38;
-    if (symbol === 'NG=F') {
-      price = price * GAS_MCX_MULTIPLIER;
-      prevClose = prevClose * GAS_MCX_MULTIPLIER;
-      high = high * GAS_MCX_MULTIPLIER;
-      low = low * GAS_MCX_MULTIPLIER;
-    }
 
     const change = price - prevClose;
     const changePercent = (change / prevClose) * 100;
@@ -1018,85 +1121,6 @@ function getAssetAnalysis(symbol) {
         currentVwap: price,
         trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
       };
-    } else if (symbol === 'NG=F') {
-      const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateVWAPStrategy(intraday1m.chart.result[0], cpr) : null;
-      const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateVWAPStrategy(intraday5m.chart.result[0], cpr) : null;
-
-      if (strat1m && strat1m.state && strat1m.state.endsWith("TRIGGERED")) {
-        strategy = strat1m;
-      } else if (strat5m && strat5m.state && strat5m.state.endsWith("TRIGGERED")) {
-        strategy = strat5m;
-      } else {
-        strategy = strat1m || strat5m;
-      }
-
-      // Convert Natural Gas strategy prices to MCX INR scale and apply Multi-Timeframe Guarded Step-Trailing Runner Strategy
-      if (strategy) {
-        if (strategy.entry) strategy.entry = strategy.entry * GAS_MCX_MULTIPLIER;
-        if (strategy.swingHigh) strategy.swingHigh = strategy.swingHigh * GAS_MCX_MULTIPLIER;
-        if (strategy.swingLow) strategy.swingLow = strategy.swingLow * GAS_MCX_MULTIPLIER;
-        if (strategy.currentVwap) strategy.currentVwap = strategy.currentVwap * GAS_MCX_MULTIPLIER;
-
-        if (strategy.entry) {
-          const t = strategy.trends || {};
-          const isLong = (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED");
-          const isShort = (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED");
-
-          // Higher Timeframe Alignment Guard (5m, 15m, 1h must all match position direction)
-          const isAligned = isLong ? (t['5m'] === 'bull' && t['15m'] === 'bull' && t['1h'] === 'bull')
-                                   : (t['5m'] === 'bear' && t['15m'] === 'bear' && t['1h'] === 'bear');
-
-          if (isLong) {
-            let baseSL = strategy.entry - 1.0;     // e.g. Entry 266.23 -> SL 265.23
-            let baseTarget = strategy.entry + 2.0; // e.g. Entry 266.23 -> Target 268.23
-
-            if (isAligned && price >= strategy.entry + 6.0) {
-              // Step 3 Trailing Extension (3x Target: +6.0 Rupees)
-              strategy.sl = strategy.entry + 4.0;
-              strategy.target = strategy.entry + 6.0;
-              strategy.trailingStep = "Step 3 (3x Target: +6.0 ₹ Trailed)";
-            } else if (isAligned && price >= strategy.entry + 4.0) {
-              // Step 2 Trailing Extension (2x Target: +4.0 Rupees)
-              strategy.sl = strategy.entry + 2.0;
-              strategy.target = strategy.entry + 4.0;
-              strategy.trailingStep = "Step 2 (2x Target: +4.0 ₹ Trailed)";
-            } else if (price >= strategy.entry + 2.0) {
-              // Step 1 Trailing (1x Target: +2.0 Rupees Breakeven Lock)
-              strategy.sl = strategy.entry; // Breakeven SL
-              strategy.target = strategy.entry + 2.0;
-              strategy.trailingStep = "Step 1 (1x Target: +2.0 ₹ Locked)";
-            } else {
-              strategy.sl = baseSL;
-              strategy.target = baseTarget;
-              strategy.trailingStep = "Base Target (+2.0 ₹)";
-            }
-          } else if (isShort) {
-            let baseSL = strategy.entry + 1.0;     // e.g. Entry 266.23 -> SL 267.23
-            let baseTarget = strategy.entry - 2.0; // e.g. Entry 266.23 -> Target 264.23
-
-            if (isAligned && price <= strategy.entry - 6.0) {
-              // Step 3 Trailing Extension (3x Target: -6.0 Rupees)
-              strategy.sl = strategy.entry - 4.0;
-              strategy.target = strategy.entry - 6.0;
-              strategy.trailingStep = "Step 3 (3x Target: -6.0 ₹ Trailed)";
-            } else if (isAligned && price <= strategy.entry - 4.0) {
-              // Step 2 Trailing Extension (2x Target: -4.0 Rupees)
-              strategy.sl = strategy.entry - 2.0;
-              strategy.target = strategy.entry - 4.0;
-              strategy.trailingStep = "Step 2 (2x Target: -4.0 ₹ Trailed)";
-            } else if (price <= strategy.entry - 2.0) {
-              // Step 1 Trailing (1x Target: -2.0 Rupees Breakeven Lock)
-              strategy.sl = strategy.entry; // Breakeven SL
-              strategy.target = strategy.entry - 2.0;
-              strategy.trailingStep = "Step 1 (1x Target: -2.0 ₹ Locked)";
-            } else {
-              strategy.sl = baseSL;
-              strategy.target = baseTarget;
-              strategy.trailingStep = "Base Target (-2.0 ₹)";
-            }
-          }
-        }
-      }
     } else {
       const assetId = (symbol === '%5ENSEBANK') ? 'banknifty' : 'nifty';
       const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateCPRStrategy(intraday1m.chart.result[0], cpr, assetId) : null;
