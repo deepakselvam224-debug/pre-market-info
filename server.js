@@ -18,6 +18,9 @@ const MIME_TYPES = {
 
 const SETTINGS_FILE = path.join(__dirname, 'whatsapp_settings.json');
 
+// Global Memory Cache for Live Market Quotes (Guarantees zero UI freezing / zero "Loading..." loops)
+let lastQuotesCache = null;
+
 const server = http.createServer((req, res) => {
   const urlPath = req.url.split('?')[0];
 
@@ -87,63 +90,27 @@ const server = http.createServer((req, res) => {
     });
     
     Promise.all([
-      getAssetAnalysis('^NSEI'),
-      getAssetAnalysis('^NSEBANK'),
-      getAssetAnalysis('NG=F'),
+      getAssetAnalysis('^NSEI').catch(err => { console.error('Nifty error:', err.message); return null; }),
+      getAssetAnalysis('^NSEBANK').catch(err => { console.error('Bank Nifty error:', err.message); return null; }),
+      getAssetAnalysis('NG=F').catch(err => { console.error('Gas error:', err.message); return null; }),
       fetchYahooQuote('INR=X').catch(() => ({ price: 83.5, change: 0, changePercent: 0 })),
       fetchYahooQuote('^GSPC').catch(() => ({ price: 5450.5, change: 30.2, changePercent: 0.55 })),
-      getAssetAnalysis('ETH-USD')
+      getAssetAnalysis('ETH-USD').catch(err => { console.error('ETH error:', err.message); return null; })
     ]).then(results => {
-      const [nifty, banknifty, gas, usdinr, spx, eth] = results;
+      let [nifty, banknifty, gas, usdinr, spx, eth] = results;
       
-      // Convert Natural Gas (Henry Hub USD) to MCX equivalent in Rupees using live USDINR rate
-      let convertedGas = null;
-      if (gas && usdinr) {
-        const rate = usdinr.price;
-        const convertVal = (v) => v !== null && v !== undefined ? Math.round(v * rate * 10) / 10 : null;
-        
-        // Convert CPR levels
-        const convertedCPR = gas.cpr ? {
-          tc: convertVal(gas.cpr.tc),
-          p: convertVal(gas.cpr.p),
-          bc: convertVal(gas.cpr.bc),
-          r1: convertVal(gas.cpr.r1),
-          s1: convertVal(gas.cpr.s1),
-          r2: convertVal(gas.cpr.r2),
-          s2: convertVal(gas.cpr.s2),
-          r3: convertVal(gas.cpr.r3),
-          s3: convertVal(gas.cpr.s3)
-        } : null;
+      // Fall back to memory cache if any core asset is null
+      if (lastQuotesCache) {
+        if (!nifty && lastQuotesCache.nifty) nifty = lastQuotesCache.nifty;
+        if (!banknifty && lastQuotesCache.banknifty) banknifty = lastQuotesCache.banknifty;
+        if (!gas && lastQuotesCache.gas) gas = lastQuotesCache.gas;
+        if (!eth && lastQuotesCache.eth) eth = lastQuotesCache.eth;
+      }
 
-        // Convert Strategy parameters
-        const convertedStrategy = gas.strategy ? {
-          state: gas.strategy.state,
-          swingHigh: convertVal(gas.strategy.swingHigh),
-          swingLow: convertVal(gas.strategy.swingLow),
-          entry: convertVal(gas.strategy.entry),
-          sl: convertVal(gas.strategy.sl),
-          target: convertVal(gas.strategy.target),
-          signalType: gas.strategy.signalType,
-          currentVwap: convertVal(gas.strategy.currentVwap)
-        } : null;
-
-        // Calculate change in Rupees
-        const gasPrevClose = gas.price - gas.change;
-        const mcxPrice = convertVal(gas.price);
-        const mcxPrevClose = gasPrevClose * (rate - usdinr.change);
-        const mcxChange = Math.round((mcxPrice - mcxPrevClose) * 10) / 10;
-
-        convertedGas = {
-          price: mcxPrice,
-          change: mcxChange,
-          changePercent: gas.changePercent || 0,
-          high: convertVal(gas.high),
-          low: convertVal(gas.low),
-          prevClose: convertVal(gas.prevClose),
-          cpr: convertedCPR,
-          strategy: convertedStrategy,
-          henryHubPrice: gas.price
-        };
+      // Format Natural Gas MCX response
+      let convertedGas = gas;
+      if (gas && !gas.henryHubPrice && usdinr) {
+        convertedGas = Object.assign({}, gas, { henryHubPrice: Math.round((gas.price / 96.425) * 100) / 100 });
       }
 
       // Check and send WhatsApp alerts on strategy state triggers
@@ -172,11 +139,20 @@ const server = http.createServer((req, res) => {
         eth,
         tradeLog
       };
-      
+
+      if (nifty || banknifty || convertedGas) {
+        lastQuotesCache = data;
+      }
+
       res.end(JSON.stringify(data));
     }).catch(err => {
-      res.statusCode = 500;
-      res.end(JSON.stringify({ error: err.message }));
+      console.error('/api/quotes global error:', err.message);
+      if (lastQuotesCache) {
+        res.end(JSON.stringify(lastQuotesCache));
+      } else {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message }));
+      }
     });
     return;
   }
@@ -1005,9 +981,10 @@ function getAssetAnalysis(symbol) {
     fetchPreviousDayHLC(symbol).catch(() => null)
   ]).then(([intraday1m, intraday5m, hlc]) => {
     const intradayResult = intraday1m || intraday5m;
-    if (!intradayResult || !intradayResult.chart || !intradayResult.chart.result) return null;
+    if (!intradayResult || !intradayResult.chart || !intradayResult.chart.result || !intradayResult.chart.result[0]) return null;
     
-    let price = meta.regularMarketPrice;
+    const meta = intradayResult.chart.result[0].meta || {};
+    let price = meta.regularMarketPrice || 0;
     let prevClose = meta.chartPreviousClose || price;
     let high = meta.regularMarketDayHigh || price;
     let low = meta.regularMarketDayLow || price;
