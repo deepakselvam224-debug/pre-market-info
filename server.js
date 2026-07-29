@@ -1047,26 +1047,24 @@ function getAssetAnalysis(symbol) {
         const cpr = hlc ? calculateCPR(hlc) : null;
         let strategy = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateVWAPStrategy(intraday1m.chart.result[0], cpr) : null;
 
-        if (strategy && intraday1m && intraday1m.chart && intraday1m.chart.result && intraday1m.chart.result[0].meta) {
-          const rawPrice = intraday1m.chart.result[0].meta.regularMarketPrice || 2.75;
-          const dynamicMultiplier = tvGas.price / rawPrice;
-          
-          if (strategy.entry) strategy.entry = strategy.entry * dynamicMultiplier;
-          if (strategy.swingHigh) strategy.swingHigh = strategy.swingHigh * dynamicMultiplier;
-          if (strategy.swingLow) strategy.swingLow = strategy.swingLow * dynamicMultiplier;
+        if (strategy) {
           strategy.currentVwap = tvGas.vwap;
 
-          if (strategy.entry) {
-            const isLong = (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED");
-            const isShort = (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED");
+          const isLong = (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED");
+          const isShort = (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED");
 
-            if (isLong) {
-              strategy.sl = strategy.entry - 1.0;     // e.g. Entry 259.1 -> SL 258.1
-              strategy.target = strategy.entry + 2.0; // e.g. Entry 259.1 -> Target 261.1
-            } else if (isShort) {
-              strategy.sl = strategy.entry + 1.0;     // e.g. Entry 259.1 -> SL 260.1
-              strategy.target = strategy.entry - 2.0; // e.g. Entry 259.1 -> Target 257.1
-            }
+          if (isLong) {
+            // Anchor Entry to TradingView's actual session Swing High (259.90)
+            strategy.swingHigh = tvGas.high;
+            strategy.entry = tvGas.high;
+            strategy.sl = parseFloat((strategy.entry - 1.0).toFixed(2));     // e.g. Entry 259.90 -> SL 258.90
+            strategy.target = parseFloat((strategy.entry + 2.0).toFixed(2)); // e.g. Entry 259.90 -> Target 261.90
+          } else if (isShort) {
+            // Anchor Entry to TradingView's actual session Swing Low (255.40)
+            strategy.swingLow = tvGas.low;
+            strategy.entry = tvGas.low;
+            strategy.sl = parseFloat((strategy.entry + 1.0).toFixed(2));     // e.g. Entry 259.90 -> SL 260.90
+            strategy.target = parseFloat((strategy.entry - 2.0).toFixed(2)); // e.g. Entry 259.90 -> Target 257.90
           }
         }
 
