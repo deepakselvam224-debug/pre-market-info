@@ -1176,21 +1176,26 @@ function getAssetAnalysis(symbol) {
         currentVwap: price,
         trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
       };
-    } else if (symbol === 'NG=F') {
+    } else if (symbol === 'gas' || symbol === 'NG=F') {
       // Natural Gas VWAP Strategy Engine strictly from TradingView data
       const vwap = tvData.vwap;
-      const isBullish = price >= vwap;
-      const isBearish = price < vwap;
+      const swingHigh = tvData.high; // 06:04 PM Swing High (260.40)
+      const swingLow = tvData.low;   // Day's Low (257.00)
 
-      if (isBullish) {
-        const entry = high;
+      // Strict Breakout Condition: Price MUST break out above the 06:04 Swing High (260.40)
+      const isLongBreakout = price >= swingHigh;
+      const isShortBreakdown = price <= swingLow;
+
+      if (isLongBreakout) {
+        // Valid Breakout Trigger at 06:23 PM IST when price breaks above 260.40!
+        const entry = swingHigh;
         const target = parseFloat((entry + 2.0).toFixed(2));
         const sl = parseFloat((entry - 1.0).toFixed(2));
         strategy = {
           state: "LONG_TRIGGERED",
           setupType: 1,
-          swingHigh: high,
-          swingLow: low,
+          swingHigh: swingHigh,
+          swingLow: swingLow,
           entry: entry,
           target: target,
           sl: sl,
@@ -1198,15 +1203,15 @@ function getAssetAnalysis(symbol) {
           currentVwap: vwap,
           trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
         };
-      } else if (isBearish) {
-        const entry = low;
+      } else if (isShortBreakdown) {
+        const entry = swingLow;
         const target = parseFloat((entry - 2.0).toFixed(2));
         const sl = parseFloat((entry + 1.0).toFixed(2));
         strategy = {
           state: "SHORT_TRIGGERED",
           setupType: 1,
-          swingHigh: high,
-          swingLow: low,
+          swingHigh: swingHigh,
+          swingLow: swingLow,
           entry: entry,
           target: target,
           sl: sl,
@@ -1214,15 +1219,29 @@ function getAssetAnalysis(symbol) {
           currentVwap: vwap,
           trends: { '5m': 'bear', '15m': 'bear', '1h': 'bear', '1d': 'bear' }
         };
+      } else {
+        // Price is inside retest/pullback range (e.g. 259.80 at 06:21 PM), waiting for 06:23 PM breakout!
+        strategy = {
+          state: "NEUTRAL",
+          setupType: null,
+          swingHigh: swingHigh,
+          swingLow: swingLow,
+          entry: null,
+          sl: null,
+          target: null,
+          signalType: null,
+          currentVwap: vwap,
+          trends: { '5m': price >= vwap ? 'bull' : 'bear', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
+        };
       }
     } else {
       // Nifty 50 and Bank Nifty CPR Strategy Engine strictly from TradingView data
-      const isBullish = cpr && price >= cpr.p;
-      const isBearish = cpr && price < cpr.p;
+      const isLongBreakout = cpr && price >= high;
+      const isShortBreakdown = cpr && price <= low;
       const slDist = (assetId === 'banknifty') ? 20 : 10;
       const defaultTargetDist = (assetId === 'banknifty') ? 60 : 34;
 
-      if (isBullish) {
+      if (isLongBreakout) {
         const entry = high;
         const target = (cpr && cpr.r1) ? parseFloat(cpr.r1.toFixed(2)) : parseFloat((entry + defaultTargetDist).toFixed(2));
         const sl = parseFloat((entry - slDist).toFixed(2));
@@ -1238,7 +1257,7 @@ function getAssetAnalysis(symbol) {
           currentVwap: tvData.vwap,
           trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
         };
-      } else if (isBearish) {
+      } else if (isShortBreakdown) {
         const entry = low;
         const target = (cpr && cpr.s1) ? parseFloat(cpr.s1.toFixed(2)) : parseFloat((entry - defaultTargetDist).toFixed(2));
         const sl = parseFloat((entry + slDist).toFixed(2));
@@ -1253,6 +1272,19 @@ function getAssetAnalysis(symbol) {
           signalType: "SHORT",
           currentVwap: tvData.vwap,
           trends: { '5m': 'bear', '15m': 'bear', '1h': 'bear', '1d': 'bear' }
+        };
+      } else {
+        strategy = {
+          state: "NEUTRAL",
+          setupType: null,
+          swingHigh: high,
+          swingLow: low,
+          entry: null,
+          sl: null,
+          target: null,
+          signalType: null,
+          currentVwap: tvData.vwap,
+          trends: { '5m': cpr && price >= cpr.p ? 'bull' : 'bear', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
         };
       }
     }
