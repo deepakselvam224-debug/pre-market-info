@@ -1036,6 +1036,69 @@ function fetchTradingViewMCXGas() {
   });
 }
 
+// Direct TradingView Scanner Fetcher for NSE Equities (NSE:NIFTY, NSE:BANKNIFTY)
+function fetchTradingViewNSE(ticker) {
+  return new Promise((resolve, reject) => {
+    const postData = JSON.stringify({
+      symbols: {
+        tickers: [ticker]
+      },
+      columns: ["close", "change", "change_abs", "high", "low", "open", "volume", "VWAP"]
+    });
+
+    const options = {
+      hostname: 'scanner.tradingview.com',
+      port: 443,
+      path: '/india/scan',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed && parsed.data && parsed.data[0] && parsed.data[0].d) {
+            const d = parsed.data[0].d;
+            const close = d[0];
+            const changePercent = d[1];
+            const changeAbs = d[2];
+            const high = d[3];
+            const low = d[4];
+            const open = d[5];
+            const volume = d[6];
+            const vwap = d[7] || close;
+
+            resolve({
+              price: close,
+              change: changeAbs,
+              changePercent: changePercent,
+              high: high,
+              low: low,
+              prevClose: close - changeAbs,
+              vwap: vwap
+            });
+          } else {
+            reject(new Error("TradingView NSE empty response"));
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
+  });
+}
+
 // Integrated Quote & CPR Analysis function (scans both 1m and 5m timeframes)
 function getAssetAnalysis(symbol) {
   if (symbol === 'NG=F') {
@@ -1085,6 +1148,51 @@ function getAssetAnalysis(symbol) {
     });
   }
 
+  if (symbol === '%5ENSEI' || symbol === '%5ENSEBANK') {
+    const tvTicker = (symbol === '%5ENSEBANK') ? 'NSE:BANKNIFTY' : 'NSE:NIFTY';
+    return fetchTradingViewNSE(tvTicker).then(tvNSE => {
+      return Promise.all([
+        fetchYahooIntradayChart(symbol, '1m').catch(() => null),
+        fetchYahooIntradayChart(symbol, '5m').catch(() => null),
+        fetchPreviousDayHLC(symbol).catch(() => null)
+      ]).then(([intraday1m, intraday5m, hlc]) => {
+        const cpr = hlc ? calculateCPR(hlc) : null;
+        const assetId = (symbol === '%5ENSEBANK') ? 'banknifty' : 'nifty';
+        const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateCPRStrategy(intraday1m.chart.result[0], cpr, assetId) : null;
+        const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateCPRStrategy(intraday5m.chart.result[0], cpr, assetId) : null;
+
+        let strategy = (strat1m && strat1m.state && strat1m.state.endsWith("TRIGGERED")) ? strat1m : (strat5m || strat1m);
+
+        if (strategy) {
+          const slDistance = (assetId === 'banknifty') ? 20 : 10;
+          if (strategy.entry) {
+            const isLong = (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED");
+            const isShort = (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED");
+
+            if (isLong) {
+              strategy.sl = parseFloat((strategy.entry - slDistance).toFixed(2));
+            } else if (isShort) {
+              strategy.sl = parseFloat((strategy.entry + slDistance).toFixed(2));
+            }
+          }
+        }
+
+        return {
+          price: tvNSE.price,
+          change: tvNSE.change,
+          changePercent: tvNSE.changePercent,
+          high: tvNSE.high,
+          low: tvNSE.low,
+          prevClose: tvNSE.prevClose,
+          cpr: cpr,
+          strategy: strategy
+        };
+      });
+    }).catch(err => {
+      console.error(`TradingView direct fetch failed for ${symbol}:`, err.message);
+    });
+  }
+
   return Promise.all([
     fetchYahooIntradayChart(symbol, '1m').catch(() => null),
     fetchYahooIntradayChart(symbol, '5m').catch(() => null),
@@ -1119,18 +1227,6 @@ function getAssetAnalysis(symbol) {
         currentVwap: price,
         trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
       };
-    } else {
-      const assetId = (symbol === '%5ENSEBANK') ? 'banknifty' : 'nifty';
-      const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateCPRStrategy(intraday1m.chart.result[0], cpr, assetId) : null;
-      const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateCPRStrategy(intraday5m.chart.result[0], cpr, assetId) : null;
-
-      if (strat1m && strat1m.state && strat1m.state.endsWith("TRIGGERED")) {
-        strategy = strat1m;
-      } else if (strat5m && strat5m.state && strat5m.state.endsWith("TRIGGERED")) {
-        strategy = strat5m;
-      } else {
-        strategy = strat1m || strat5m;
-      }
     }
     
     return {
