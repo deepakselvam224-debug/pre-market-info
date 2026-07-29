@@ -1099,122 +1099,41 @@ function fetchTradingViewNSE(ticker) {
   });
 }
 
-// Integrated Quote & CPR Analysis function (scans both 1m and 5m timeframes)
+// Integrated Quote & CPR Analysis function (100% Pure TradingView Scanner Engine)
 function getAssetAnalysis(symbol) {
+  let tvPromise;
+  let assetId = 'nifty';
+
   if (symbol === 'NG=F') {
-    return fetchTradingViewMCXGas().then(tvGas => {
-      return Promise.all([
-        fetchYahooIntradayChart(symbol, '1m').catch(() => null),
-        fetchPreviousDayHLC(symbol).catch(() => null)
-      ]).then(([intraday1m, hlc]) => {
-        const cpr = hlc ? calculateCPR(hlc) : null;
-        let strategy = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateVWAPStrategy(intraday1m.chart.result[0], cpr) : null;
-
-        if (strategy) {
-          strategy.currentVwap = tvGas.vwap;
-
-          const isLong = (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED");
-          const isShort = (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED");
-
-          if (isLong) {
-            // Anchor Entry to TradingView's actual session Swing High (259.90)
-            strategy.swingHigh = tvGas.high;
-            strategy.entry = tvGas.high;
-            strategy.sl = parseFloat((strategy.entry - 1.0).toFixed(2));     // e.g. Entry 259.90 -> SL 258.90
-            strategy.target = parseFloat((strategy.entry + 2.0).toFixed(2)); // e.g. Entry 259.90 -> Target 261.90
-          } else if (isShort) {
-            // Anchor Entry to TradingView's actual session Swing Low (255.40)
-            strategy.swingLow = tvGas.low;
-            strategy.entry = tvGas.low;
-            strategy.sl = parseFloat((strategy.entry + 1.0).toFixed(2));     // e.g. Entry 259.90 -> SL 260.90
-            strategy.target = parseFloat((strategy.entry - 2.0).toFixed(2)); // e.g. Entry 259.90 -> Target 257.90
-          }
-        }
-
-        return {
-          price: tvGas.price,
-          change: tvGas.change,
-          changePercent: tvGas.changePercent,
-          high: tvGas.high,
-          low: tvGas.low,
-          prevClose: tvGas.prevClose,
-          cpr: cpr,
-          strategy: strategy
-        };
-      });
-    }).catch(err => {
-      console.error("TradingView direct MCX fetch failed, using fallback:", err.message);
-      return null;
-    });
+    tvPromise = fetchTradingViewMCXGas();
+    assetId = 'gas';
+  } else if (symbol === '%5ENSEBANK') {
+    tvPromise = fetchTradingViewNSE('NSE:BANKNIFTY');
+    assetId = 'banknifty';
+  } else if (symbol === '%5ENSEI') {
+    tvPromise = fetchTradingViewNSE('NSE:NIFTY');
+    assetId = 'nifty';
+  } else if (symbol === 'ETH-USD') {
+    tvPromise = fetchTradingViewNSE('CRYPTO:ETHUSD');
+    assetId = 'eth';
+  } else {
+    return Promise.resolve(null);
   }
 
-  if (symbol === '%5ENSEI' || symbol === '%5ENSEBANK') {
-    const tvTicker = (symbol === '%5ENSEBANK') ? 'NSE:BANKNIFTY' : 'NSE:NIFTY';
-    return fetchTradingViewNSE(tvTicker).then(tvNSE => {
-      return Promise.all([
-        fetchYahooIntradayChart(symbol, '1m').catch(() => null),
-        fetchYahooIntradayChart(symbol, '5m').catch(() => null),
-        fetchPreviousDayHLC(symbol).catch(() => null)
-      ]).then(([intraday1m, intraday5m, hlc]) => {
-        const cpr = hlc ? calculateCPR(hlc) : null;
-        const assetId = (symbol === '%5ENSEBANK') ? 'banknifty' : 'nifty';
-        const strat1m = (intraday1m && intraday1m.chart && intraday1m.chart.result) ? calculateCPRStrategy(intraday1m.chart.result[0], cpr, assetId) : null;
-        const strat5m = (intraday5m && intraday5m.chart && intraday5m.chart.result) ? calculateCPRStrategy(intraday5m.chart.result[0], cpr, assetId) : null;
+  return tvPromise.then(tvData => {
+    if (!tvData) return null;
 
-        let strategy = (strat1m && strat1m.state && strat1m.state.endsWith("TRIGGERED")) ? strat1m : (strat5m || strat1m);
+    const price = tvData.price;
+    const high = tvData.high;
+    const low = tvData.low;
+    const prevClose = tvData.prevClose;
 
-        if (strategy) {
-          const slDistance = (assetId === 'banknifty') ? 20 : 10;
-          if (strategy.entry) {
-            const isLong = (strategy.signalType === "LONG" || strategy.state === "LONG_TRIGGERED");
-            const isShort = (strategy.signalType === "SHORT" || strategy.state === "SHORT_TRIGGERED");
+    // Calculate CPR 100% strictly from TradingView daily HLC
+    const cpr = calculateCPR({ high, low, close: prevClose });
 
-            if (isLong) {
-              strategy.sl = parseFloat((strategy.entry - slDistance).toFixed(2));
-            } else if (isShort) {
-              strategy.sl = parseFloat((strategy.entry + slDistance).toFixed(2));
-            }
-          }
-        }
+    let strategy = null;
 
-        return {
-          price: tvNSE.price,
-          change: tvNSE.change,
-          changePercent: tvNSE.changePercent,
-          high: tvNSE.high,
-          low: tvNSE.low,
-          prevClose: tvNSE.prevClose,
-          cpr: cpr,
-          strategy: strategy
-        };
-      });
-    }).catch(err => {
-      console.error(`TradingView direct fetch failed for ${symbol}:`, err.message);
-    });
-  }
-
-  return Promise.all([
-    fetchYahooIntradayChart(symbol, '1m').catch(() => null),
-    fetchYahooIntradayChart(symbol, '5m').catch(() => null),
-    fetchPreviousDayHLC(symbol).catch(() => null)
-  ]).then(([intraday1m, intraday5m, hlc]) => {
-    const intradayResult = intraday1m || intraday5m;
-    if (!intradayResult || !intradayResult.chart || !intradayResult.chart.result || !intradayResult.chart.result[0]) return null;
-    
-    const meta = intradayResult.chart.result[0].meta || {};
-    let price = meta.regularMarketPrice || 0;
-    let prevClose = meta.chartPreviousClose || price;
-    let high = meta.regularMarketDayHigh || price;
-    let low = meta.regularMarketDayLow || price;
-
-    const change = price - prevClose;
-    const changePercent = (change / prevClose) * 100;
-    
-    const cpr = hlc ? calculateCPR(hlc) : null;
-
-    let strategy;
     if (symbol === 'ETH-USD') {
-      // Temporarily disable trade signals for Ethereum as requested
       strategy = {
         state: "NEUTRAL",
         setupType: null,
@@ -1227,18 +1146,100 @@ function getAssetAnalysis(symbol) {
         currentVwap: price,
         trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
       };
+    } else if (symbol === 'NG=F') {
+      // Natural Gas VWAP Strategy Engine strictly from TradingView data
+      const vwap = tvData.vwap;
+      const isBullish = price >= vwap;
+      const isBearish = price < vwap;
+
+      if (isBullish) {
+        const entry = high;
+        const target = parseFloat((entry + 2.0).toFixed(2));
+        const sl = parseFloat((entry - 1.0).toFixed(2));
+        strategy = {
+          state: "LONG_TRIGGERED",
+          setupType: 1,
+          swingHigh: high,
+          swingLow: low,
+          entry: entry,
+          target: target,
+          sl: sl,
+          signalType: "LONG",
+          currentVwap: vwap,
+          trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
+        };
+      } else if (isBearish) {
+        const entry = low;
+        const target = parseFloat((entry - 2.0).toFixed(2));
+        const sl = parseFloat((entry + 1.0).toFixed(2));
+        strategy = {
+          state: "SHORT_TRIGGERED",
+          setupType: 1,
+          swingHigh: high,
+          swingLow: low,
+          entry: entry,
+          target: target,
+          sl: sl,
+          signalType: "SHORT",
+          currentVwap: vwap,
+          trends: { '5m': 'bear', '15m': 'bear', '1h': 'bear', '1d': 'bear' }
+        };
+      }
+    } else {
+      // Nifty 50 and Bank Nifty CPR Strategy Engine strictly from TradingView data
+      const isBullish = cpr && price >= cpr.p;
+      const isBearish = cpr && price < cpr.p;
+      const slDist = (assetId === 'banknifty') ? 20 : 10;
+      const defaultTargetDist = (assetId === 'banknifty') ? 60 : 34;
+
+      if (isBullish) {
+        const entry = high;
+        const target = (cpr && cpr.r1) ? parseFloat(cpr.r1.toFixed(2)) : parseFloat((entry + defaultTargetDist).toFixed(2));
+        const sl = parseFloat((entry - slDist).toFixed(2));
+        strategy = {
+          state: "LONG_TRIGGERED",
+          setupType: 1,
+          swingHigh: high,
+          swingLow: low,
+          entry: entry,
+          target: target,
+          sl: sl,
+          signalType: "LONG",
+          currentVwap: tvData.vwap,
+          trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' }
+        };
+      } else if (isBearish) {
+        const entry = low;
+        const target = (cpr && cpr.s1) ? parseFloat(cpr.s1.toFixed(2)) : parseFloat((entry - defaultTargetDist).toFixed(2));
+        const sl = parseFloat((entry + slDist).toFixed(2));
+        strategy = {
+          state: "SHORT_TRIGGERED",
+          setupType: 1,
+          swingHigh: high,
+          swingLow: low,
+          entry: entry,
+          target: target,
+          sl: sl,
+          signalType: "SHORT",
+          currentVwap: tvData.vwap,
+          trends: { '5m': 'bear', '15m': 'bear', '1h': 'bear', '1d': 'bear' }
+        };
+      }
     }
-    
+
     return {
-      price,
-      change,
-      changePercent,
-      high,
-      low,
-      prevClose,
-      cpr,
-      strategy
+      price: tvData.price,
+      change: tvData.change,
+      changePercent: tvData.changePercent,
+      high: tvData.high,
+      low: tvData.low,
+      prevClose: tvData.prevClose,
+      cpr: cpr,
+      strategy: strategy
     };
+  }).catch(err => {
+    console.error(`TradingView Exclusive Engine error for ${symbol}:`, err.message);
+    return null;
   });
 }
 
