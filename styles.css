@@ -2513,3 +2513,177 @@ body.light-theme .empty-impact-msg {
   background: rgba(0, 0, 0, 0.02) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
+
+/* --- FOREX FACTORY STYLE ECONOMIC CALENDAR TABLE STYLING --- */
+.forexfactory-card {
+  overflow: hidden;
+}
+
+.forexfactory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.forex-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ff-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ff-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-bright);
+}
+
+.ff-tab.active {
+  background: var(--accent-blue, #3b82f6);
+  color: #ffffff;
+  border-color: var(--accent-blue, #3b82f6);
+}
+
+.forexfactory-table-wrapper {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.forexfactory-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.forexfactory-table th {
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.forexfactory-table td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.ff-row {
+  transition: background 0.15s ease;
+}
+
+.ff-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ff-date-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.ff-day {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+
+.ff-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.ff-cur-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--text-bright);
+}
+
+.ff-folder {
+  font-size: 0.95rem;
+}
+
+.folder-red {
+  color: #ef4444;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4));
+}
+
+.folder-orange {
+  color: #f97316;
+  filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.4));
+}
+
+.folder-yellow {
+  color: #eab308;
+  filter: drop-shadow(0 0 4px rgba(234, 179, 8, 0.4));
+}
+
+.ff-event-name {
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.col-val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-align: right;
+}
+
+.forexfactory-table th.col-val {
+  text-align: right;
+}
+
+.val-better {
+  color: #10b981 !important;
+  font-weight: 800;
+}
+
+.val-worse {
+  color: #ef4444 !important;
+  font-weight: 800;
+}
+
+.val-neutral {
+  color: var(--text-bright);
+}
+
+.val-muted {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ff-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

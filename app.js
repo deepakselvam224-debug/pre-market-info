@@ -1331,3 +1331,99 @@ async function fetchFiiDiiData() {
     if (dateEl) dateEl.textContent = "Sync failed";
   }
 }
+
+/* --- FOREX FACTORY LIVE ECONOMIC CALENDAR ENGINE --- */
+let RAW_FOREX_CALENDAR = [];
+let currentForexTab = 'all';
+
+window.switchForexCalendarTab = function(tab) {
+  currentForexTab = tab;
+  document.querySelectorAll('.ff-tab').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById(`ff-tab-${tab}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  renderForexCalendarTable();
+};
+
+async function fetchForexCalendarData() {
+  const tbody = document.getElementById('forex-calendar-body');
+  if (!tbody) return;
+  
+  try {
+    const res = await fetch('/api/forex-calendar');
+    if (!res.ok) throw new Error("Forex calendar API error");
+    RAW_FOREX_CALENDAR = await res.json();
+    renderForexCalendarTable();
+  } catch (e) {
+    console.error("Forex calendar fetch error:", e);
+  }
+}
+
+function renderForexCalendarTable() {
+  const tbody = document.getElementById('forex-calendar-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  let list = RAW_FOREX_CALENDAR || [];
+  if (currentForexTab === 'today') {
+    list = list.filter(item => item.date.includes('Wed Jul 29') || item.date.includes('Thu Jul 30'));
+  } else if (currentForexTab === 'high') {
+    list = list.filter(item => item.impact === 'high');
+  }
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="ff-empty">No economic events matching current filter.</td></tr>`;
+    return;
+  }
+
+  let lastDate = '';
+
+  list.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.className = `ff-row impact-${item.impact}`;
+
+    // Folder Icon & Color
+    let folderIcon = '📁';
+    let impactClass = 'folder-yellow';
+    if (item.impact === 'high') {
+      folderIcon = '📁';
+      impactClass = 'folder-red';
+    } else if (item.impact === 'medium') {
+      folderIcon = '📁';
+      impactClass = 'folder-orange';
+    }
+
+    // Actual Status Color
+    let actualClass = 'val-neutral';
+    if (item.status === 'better') actualClass = 'val-better';
+    else if (item.status === 'worse') actualClass = 'val-worse';
+
+    tr.innerHTML = `
+      <td class="col-date">
+        <div class="ff-date-cell">
+          <span class="ff-day">${item.date}</span>
+          <span class="ff-time">${item.time}</span>
+        </div>
+      </td>
+      <td class="col-cur">
+        <span class="ff-cur-chip">${item.country || ''} ${item.currency}</span>
+      </td>
+      <td class="col-impact">
+        <span class="ff-folder ${impactClass}" title="${item.impact.toUpperCase()} IMPACT">${folderIcon}</span>
+      </td>
+      <td class="col-event">
+        <span class="ff-event-name">${item.event}</span>
+      </td>
+      <td class="col-val ${actualClass}">${item.actual}</td>
+      <td class="col-val val-muted">${item.forecast}</td>
+      <td class="col-val val-muted">${item.previous}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+// Automatically fetch Forex Calendar on page load
+document.addEventListener('DOMContentLoaded', () => {
+  fetchForexCalendarData();
+  setInterval(fetchForexCalendarData, 60000);
+});

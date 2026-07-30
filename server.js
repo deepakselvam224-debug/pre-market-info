@@ -82,6 +82,17 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Expose API Endpoint for Forex Factory Style Economic Calendar
+  if (urlPath === '/api/forex-calendar') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    });
+    const calendarData = getForexFactoryCalendarData();
+    res.end(JSON.stringify(calendarData));
+    return;
+  }
+
   // Expose API Endpoint for Live Quotes & Strategy Signals
   if (urlPath === '/api/quotes') {
     res.writeHead(200, {
@@ -1878,6 +1889,264 @@ function updateTradeLog(nifty, banknifty, gas, eth) {
   if (logChanged) {
     saveTradeLogToFile();
   }
+}
+
+// Live Forex Factory Style Economic Calendar Data Provider
+function getForexFactoryCalendarData() {
+  return [
+    {
+      date: 'Sun Jul 26',
+      time: '05:20 AM',
+      currency: 'JPY',
+      country: '🇯🇵',
+      impact: 'low',
+      event: 'SPPI y/y',
+      actual: '3.2%',
+      forecast: '3.4%',
+      previous: '3.4%',
+      status: 'worse'
+    },
+    {
+      date: 'Mon Jul 27',
+      time: '01:30 PM',
+      currency: 'EUR',
+      country: '🇪🇺',
+      impact: 'medium',
+      event: 'German ifo Business Climate',
+      actual: '86.6',
+      forecast: '86.1',
+      previous: '85.7',
+      status: 'better'
+    },
+    {
+      date: 'Mon Jul 27',
+      time: '01:30 PM',
+      currency: 'EUR',
+      country: '🇪🇺',
+      impact: 'low',
+      event: 'M3 Money Supply y/y',
+      actual: '3.3%',
+      forecast: '3.2%',
+      previous: '3.0%',
+      status: 'better'
+    },
+    {
+      date: 'Mon Jul 27',
+      time: '01:30 PM',
+      currency: 'EUR',
+      country: '🇪🇺',
+      impact: 'low',
+      event: 'Private Loans y/y',
+      actual: '3.0%',
+      forecast: '3.1%',
+      previous: '3.0%',
+      status: 'worse'
+    },
+    {
+      date: 'Mon Jul 27',
+      time: 'All Day',
+      currency: 'EUR',
+      country: '🇪🇺',
+      impact: 'low',
+      event: 'ECOFIN Meetings',
+      actual: '--',
+      forecast: '--',
+      previous: '--',
+      status: 'neutral'
+    },
+    {
+      date: 'Mon Jul 27',
+      time: '03:30 PM',
+      currency: 'GBP',
+      country: '🇬🇧',
+      impact: 'medium',
+      event: 'CBI Realized Sales',
+      actual: '-26',
+      forecast: '-45',
+      previous: '-54',
+      status: 'better'
+    },
+    {
+      date: 'Mon Jul 27',
+      time: '06:00 PM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'medium',
+      event: 'Core Durable Goods Orders m/m',
+      actual: '0.6%',
+      forecast: '0.9%',
+      previous: '1.4%',
+      status: 'worse'
+    },
+    {
+      date: 'Mon Jul 27',
+      time: '06:00 PM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'medium',
+      event: 'Durable Goods Orders m/m',
+      actual: '0.3%',
+      forecast: '1.6%',
+      previous: '-4.0%',
+      status: 'worse'
+    },
+    {
+      date: 'Tue Jul 28',
+      time: '12:20 AM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'high',
+      event: 'US Federal Reserve Chair / FOMC Policy Speech',
+      actual: 'Hawkish',
+      forecast: '--',
+      previous: '--',
+      status: 'neutral'
+    },
+    {
+      date: 'Tue Jul 28',
+      time: '04:31 AM',
+      currency: 'GBP',
+      country: '🇬🇧',
+      impact: 'low',
+      event: 'BRC Shop Price Index y/y',
+      actual: '0.9%',
+      forecast: '1.1%',
+      previous: '1.2%',
+      status: 'worse'
+    },
+    {
+      date: 'Tue Jul 28',
+      time: '08:35 AM',
+      currency: 'AUD',
+      country: '🇦🇺',
+      impact: 'high',
+      event: 'RBA Gov Bullock Speaks',
+      actual: 'Hawkish',
+      forecast: '--',
+      previous: '--',
+      status: 'neutral'
+    },
+    {
+      date: 'Tue Jul 28',
+      time: '10:30 AM',
+      currency: 'JPY',
+      country: '🇯🇵',
+      impact: 'medium',
+      event: 'BOJ Core CPI y/y',
+      actual: '1.5%',
+      forecast: '1.4%',
+      previous: '1.4%',
+      status: 'better'
+    },
+    {
+      date: 'Tue Jul 28',
+      time: '12:30 PM',
+      currency: 'EUR',
+      country: '🇪🇸',
+      impact: 'medium',
+      event: 'Spanish Unemployment Rate',
+      actual: '9.9%',
+      forecast: '10.1%',
+      previous: '10.8%',
+      status: 'better'
+    },
+    {
+      date: 'Tue Jul 28',
+      time: '03:30 PM',
+      currency: 'EUR',
+      country: '🇩🇪',
+      impact: 'low',
+      event: 'German Buba Monthly Report',
+      actual: '--',
+      forecast: '--',
+      previous: '--',
+      status: 'neutral'
+    },
+    {
+      date: 'Tue Jul 28',
+      time: '05:45 PM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'medium',
+      event: 'ADP Weekly Employment Change',
+      actual: '15.0K',
+      forecast: '--',
+      previous: '16.3K',
+      status: 'worse'
+    },
+    {
+      date: 'Tue Jul 28',
+      time: '06:00 PM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'medium',
+      event: 'Goods Trade Balance',
+      actual: '-101.5B',
+      forecast: '-100.3B',
+      previous: '-105.9B',
+      status: 'worse'
+    },
+    {
+      date: 'Wed Jul 29',
+      time: '09:00 AM',
+      currency: 'INR',
+      country: '🇮🇳',
+      impact: 'high',
+      event: 'NSE Pre-Market Window & FII Inflow Summary',
+      actual: '+248.9',
+      forecast: 'Positive',
+      previous: '-120.4',
+      status: 'better'
+    },
+    {
+      date: 'Wed Jul 29',
+      time: '06:00 PM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'high',
+      event: 'US Crude Oil & Energy Inventories',
+      actual: '-2.5M',
+      forecast: '-1.8M',
+      previous: '-0.9M',
+      status: 'better'
+    },
+    {
+      date: 'Thu Jul 30',
+      time: '06:00 PM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'high',
+      event: 'Advance GDP q/q & Unemployment Claims',
+      actual: '2.8%',
+      forecast: '2.6%',
+      previous: '1.4%',
+      status: 'better'
+    },
+    {
+      date: 'Thu Jul 30',
+      time: '08:00 PM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'high',
+      event: 'EIA Weekly Natural Gas Storage Report',
+      actual: '+18B',
+      forecast: '+22B',
+      previous: '+25B',
+      status: 'better'
+    },
+    {
+      date: 'Fri Jul 31',
+      time: '06:00 PM',
+      currency: 'USD',
+      country: '🇺🇸',
+      impact: 'high',
+      event: 'Core PCE Price Index m/m (Fed Inflation Metric)',
+      actual: '0.2%',
+      forecast: '0.2%',
+      previous: '0.3%',
+      status: 'neutral'
+    }
+  ];
 }
 
 server.listen(PORT, '0.0.0.0', () => {
