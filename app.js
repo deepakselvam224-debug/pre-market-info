@@ -199,14 +199,18 @@ function updateSentimentGauge(data) {
   }
 
   if (bulletinCprEl) {
-    if (data.nifty && data.nifty.cpr) {
-      const cpr = data.nifty.cpr;
-      const p = cpr.p ? cpr.p.toFixed(1) : '--';
-      const tc = cpr.tc ? cpr.tc.toFixed(1) : '--';
-      const bc = cpr.bc ? cpr.bc.toFixed(1) : '--';
-      bulletinCprEl.innerHTML = `🎯 <strong>Today's Nifty CPR:</strong> Pivot ${p} | TC ${tc} | BC ${bc} <span class="cpr-bias-text">(Bullish above ${tc} | Bearish below ${bc})</span>`;
+    const cpr = (data.nifty && data.nifty.cpr) ? data.nifty.cpr : { p: 24120.2, tc: 24125.5, bc: 24114.9 };
+    const p = cpr.p ? cpr.p.toFixed(1) : '24,120.2';
+    const tc = cpr.tc ? cpr.tc.toFixed(1) : '24,125.5';
+    const bc = cpr.bc ? cpr.bc.toFixed(1) : '24,114.9';
+
+    const width = Math.abs((cpr.tc || 0) - (cpr.bc || 0));
+    const widthFormatted = width > 0 ? width.toFixed(1) : '10.6';
+
+    if (width < 35) {
+      bulletinCprEl.innerHTML = `⚡ <strong>Nifty CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-narrow-text">NARROW RANGE (${widthFormatted} pts)</span>: High chance of Big One-Sided Momentum Rally!`;
     } else {
-      bulletinCprEl.innerHTML = `🎯 <strong>Today's Nifty CPR:</strong> Pivot 24,120.2 | TC 24,125.5 | BC 24,114.9 <span class="cpr-bias-text">(Bullish above 24,125.5 | Bearish below 24,114.9)</span>`;
+      bulletinCprEl.innerHTML = `🔄 <strong>Nifty CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-wide-text">WIDER RANGE (${widthFormatted} pts)</span>: Expect Sideways Volatile Trading (No big movements).`;
     }
   }
 }
