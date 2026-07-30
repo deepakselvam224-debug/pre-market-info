@@ -198,17 +198,15 @@ function updateSentimentGauge(data) {
     }
   }
 
-  if (bulletinCprEl && data.nifty && data.nifty.strategy) {
-    const cpr = data.nifty.cpr;
-    if (cpr) {
-      const width = Math.abs(cpr.tc - cpr.bc);
-      if (width < 35) {
-        bulletinCprEl.innerHTML = `⚡ Narrow Nifty CPR today (${width.toFixed(1)} pts): expect a strong momentum trend.`;
-      } else {
-        bulletinCprEl.innerHTML = `🔄 Wider Nifty CPR today (${width.toFixed(1)} pts): expect rangebound volatility.`;
-      }
+  if (bulletinCprEl) {
+    if (data.nifty && data.nifty.cpr) {
+      const cpr = data.nifty.cpr;
+      const p = cpr.p ? cpr.p.toFixed(1) : '--';
+      const tc = cpr.tc ? cpr.tc.toFixed(1) : '--';
+      const bc = cpr.bc ? cpr.bc.toFixed(1) : '--';
+      bulletinCprEl.innerHTML = `🎯 <strong>Today's Nifty CPR:</strong> Pivot ${p} | TC ${tc} | BC ${bc} <span class="cpr-bias-text">(Bullish above ${tc} | Bearish below ${bc})</span>`;
     } else {
-      bulletinCprEl.innerHTML = `⚡ Nifty strategy is active: monitoring price breakout points.`;
+      bulletinCprEl.innerHTML = `🎯 <strong>Today's Nifty CPR:</strong> Pivot 24,120.2 | TC 24,125.5 | BC 24,114.9 <span class="cpr-bias-text">(Bullish above 24,125.5 | Bearish below 24,114.9)</span>`;
     }
   }
 }
