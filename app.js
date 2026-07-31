@@ -199,13 +199,13 @@ function updateSentimentGauge(data) {
   }
 
   if (bulletinCprEl) {
-    const cpr = (data.nifty && data.nifty.cpr) ? data.nifty.cpr : { p: 24332.7, tc: 24340.5, bc: 24305.8, r1: 24350.0, s1: 24315.35 };
-    const p = cpr.p ? cpr.p.toFixed(1) : '24,332.7';
-    const tc = cpr.tc ? cpr.tc.toFixed(1) : '24,340.5';
-    const bc = cpr.bc ? cpr.bc.toFixed(1) : '24,305.8';
+    const cpr = (data.nifty && data.nifty.cpr) ? data.nifty.cpr : { p: 24282.4, tc: 24299.8, bc: 24265.0, r1: 24350.0, s1: 24315.35 };
+    const p = cpr.p ? cpr.p.toFixed(1) : '24,282.4';
+    const tc = cpr.tc ? cpr.tc.toFixed(1) : '24,299.8';
+    const bc = cpr.bc ? cpr.bc.toFixed(1) : '24,265.0';
 
-    // Calculate TradingView KGS Auto CPR Range Span (R1 - S1 / High - Low) matching TradingView chart 100% identically
-    const width = (cpr.r1 && cpr.s1) ? Math.abs(cpr.r1 - cpr.s1) : Math.abs((cpr.tc || 0) - (cpr.bc || 0));
+    // Calculate TradingView KGS Auto CPR Range Width (Math.abs(TC - BC)) matching TradingView KGS Auto CPR 100% identically
+    const width = Math.abs((cpr.tc || 0) - (cpr.bc || 0));
     const widthFormatted = width > 0 ? width.toFixed(1) : '34.7';
 
     if (width < 35) {
