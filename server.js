@@ -20,6 +20,7 @@ const SETTINGS_FILE = path.join(__dirname, 'whatsapp_settings.json');
 
 // Global Memory Cache for Live Market Quotes (Guarantees zero UI freezing / zero "Loading..." loops)
 let lastQuotesCache = null;
+let dailyCprCache = {};
 
 const server = http.createServer((req, res) => {
   const urlPath = req.url.split('?')[0];
@@ -1174,8 +1175,15 @@ function getAssetAnalysis(symbol) {
     const low = tvData.low;
     const prevClose = tvData.prevClose;
 
-    // Calculate CPR 100% strictly from TradingView daily HLC
-    const cpr = calculateCPR({ high, low, close: prevClose });
+    // Permanent Day Lock: Freeze CPR calculation for the entire trading day so CPR levels never change during live market hours
+    const todayKey = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const cacheKey = `${todayKey}_${assetId}`;
+
+    let cpr = dailyCprCache[cacheKey];
+    if (!cpr) {
+      cpr = calculateCPR({ high, low, close: prevClose });
+      dailyCprCache[cacheKey] = cpr;
+    }
 
     let strategy = null;
 
