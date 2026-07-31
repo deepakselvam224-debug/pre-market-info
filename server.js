@@ -355,20 +355,21 @@ function fetchPreviousDayHLC(symbol) {
   });
 }
 
-// Calculate Central Pivot Range (CPR) and standard S1-S3 / R1-R3 levels
+// Calculate Central Pivot Range (CPR) strictly aligned with TradingView KGS Auto CPR
 function calculateCPR(hlc) {
   const p = (hlc.high + hlc.low + hlc.close) / 3;
-  const bc = (hlc.high + hlc.low) / 2;
-  const tc = (p - bc) + p;
+  const rangeSpan = Math.abs(hlc.high - hlc.low);
+  const tc = p + (rangeSpan / 2);
+  const bc = p - (rangeSpan / 2);
   
   const r1 = 2 * p - hlc.low;
   const s1 = 2 * p - hlc.high;
   
-  const r2 = p + (hlc.high - hlc.low);
-  const s2 = p - (hlc.high - hlc.low);
+  const r2 = p + rangeSpan;
+  const s2 = p - rangeSpan;
   
-  const r3 = r1 + (hlc.high - hlc.low);
-  const s3 = s1 - (hlc.high - hlc.low);
+  const r3 = r1 + rangeSpan;
+  const s3 = s1 - rangeSpan;
   
   return { tc, p, bc, r1, s1, r2, s2, r3, s3 };
 }
