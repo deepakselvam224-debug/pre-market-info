@@ -358,9 +358,13 @@ function fetchPreviousDayHLC(symbol) {
 // Calculate Central Pivot Range (CPR) strictly aligned with TradingView KGS Auto CPR
 function calculateCPR(hlc) {
   const p = (hlc.high + hlc.low + hlc.close) / 3;
+  const rawBc = (hlc.high + hlc.low) / 2;
+  const dist = Math.abs(p - rawBc);
+  
+  // TradingView KGS Auto CPR symmetric boundary placement:
+  const tc = p + dist;
+  const bc = p - dist;
   const rangeSpan = Math.abs(hlc.high - hlc.low);
-  const tc = p + (rangeSpan / 2);
-  const bc = p - (rangeSpan / 2);
   
   const r1 = 2 * p - hlc.low;
   const s1 = 2 * p - hlc.high;
