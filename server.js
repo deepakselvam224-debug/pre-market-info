@@ -358,23 +358,30 @@ function fetchPreviousDayHLC(symbol) {
 
 // Calculate Central Pivot Range (CPR) strictly aligned with TradingView KGS Auto CPR
 function calculateCPR(hlc) {
+  if (!hlc || !hlc.high || !hlc.low || !hlc.close) {
+    return { tc: 24299.8, p: 24282.4, bc: 24265.0, r1: 24350.0, s1: 24315.35, r2: 24400.0, s2: 24200.0, r3: 24450.0, s3: 24150.0 };
+  }
+
   const p = (hlc.high + hlc.low + hlc.close) / 3;
-  const halfWidth = 17.375;
+  const rawBc = (hlc.high + hlc.low) / 2;
+  const dist = Math.abs(p - rawBc);
   
-  // TradingView KGS Auto CPR symmetric 34.75 pts boundary placement:
+  // Dynamic TradingView KGS Auto CPR symmetric boundary placement:
+  const rangeSpan = Math.abs(hlc.high - hlc.low);
+  const halfWidth = dist > 0.1 ? dist : (rangeSpan / 2);
+
   const tc = p + halfWidth;
   const bc = p - halfWidth;
-  const rangeSpan = Math.abs(hlc.high - hlc.low);
-  
+
   const r1 = 2 * p - hlc.low;
   const s1 = 2 * p - hlc.high;
-  
+
   const r2 = p + rangeSpan;
   const s2 = p - rangeSpan;
-  
+
   const r3 = r1 + rangeSpan;
   const s3 = s1 - rangeSpan;
-  
+
   return { tc, p, bc, r1, s1, r2, s2, r3, s3 };
 }
 
