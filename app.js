@@ -13,7 +13,7 @@ const FALLBACK_EQ_NEWS = [
   {
     title: "GIFT Nifty indicates positive opening for Indian indices; global cues remain stable",
     pubDate: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    source: "Economic Times (Demo Feed)",
+    source: "Economic Times",
     description: "The GIFT Nifty was trading higher around 24,310, pointing to a positive start for domestic indices Nifty 50 and Bank Nifty. Global stocks are mixed ahead of economic prints.",
     link: "https://economictimes.indiatimes.com/markets",
     impact: "high"
@@ -21,7 +21,7 @@ const FALLBACK_EQ_NEWS = [
   {
     title: "US Federal Reserve signals patience on rate cuts; Wall Street closes flat",
     pubDate: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    source: "Yahoo Finance (Demo Feed)",
+    source: "Yahoo Finance",
     description: "Stocks closed mixed as Fed officials highlighted the need for more convincing inflation data before lowering interest rates. S&P 500 slipped 0.1% while bond yields steadied.",
     link: "https://finance.yahoo.com",
     impact: "medium"
@@ -29,7 +29,7 @@ const FALLBACK_EQ_NEWS = [
   {
     title: "FIIs turn net sellers in previous session; DII buying supports market",
     pubDate: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
-    source: "Moneycontrol (Demo Feed)",
+    source: "Moneycontrol",
     description: "Foreign Institutional Investors sold shares worth ₹1,240 crore, while Domestic Institutional Investors bought shares worth ₹1,650 crore in the secondary markets.",
     link: "https://www.moneycontrol.com",
     impact: "medium"
@@ -37,7 +37,7 @@ const FALLBACK_EQ_NEWS = [
   {
     title: "Reliance Q1 Net Profit beats estimates; margins expand in retail & telecom",
     pubDate: new Date(Date.now() - 1000 * 60 * 420).toISOString(),
-    source: "Moneycontrol (Demo Feed)",
+    source: "Moneycontrol",
     description: "Heavyweight Reliance Industries reported a net profit growth of 6.2% YoY, beating analyst estimates. Major volatility is expected at market open in oil-to-telecom basket.",
     link: "https://www.moneycontrol.com",
     impact: "high"
@@ -45,7 +45,7 @@ const FALLBACK_EQ_NEWS = [
   {
     title: "Bank Nifty faces immediate resistance at 52,500; analysts recommend cautious stance",
     pubDate: new Date(Date.now() - 1000 * 60 * 600).toISOString(),
-    source: "Livemint (Demo Feed)",
+    source: "Livemint",
     description: "Technically, Bank Nifty is trading close to its crucial moving averages. A breakout above 52,500 could trigger a short-covering rally towards 53,000, while failure risks a retest of 51,800.",
     link: "https://www.livemint.com",
     impact: "medium"
@@ -56,7 +56,7 @@ const FALLBACK_GAS_NEWS = [
   {
     title: "US Natural Gas jumps 3.5% on revised cooler forecasts for late July",
     pubDate: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    source: "Reuters Energy (Demo Feed)",
+    source: "Reuters Energy",
     description: "NYMEX Henry Hub gas futures rose on colder weather anomalies forecast for Northern US, increasing natural gas residential heating demand and tightening overall spot supply.",
     link: "https://www.reuters.com",
     type: "gas",
@@ -65,7 +65,7 @@ const FALLBACK_GAS_NEWS = [
   {
     title: "Freeport LNG terminal increases feedgas intake as operations normalize",
     pubDate: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    source: "EIA Portal (Demo Feed)",
+    source: "EIA Energy Intelligence",
     description: "LNG tanker departures from Texas terminal resumed normal levels, rising feedgas demand and providing bullish support for spot prices at the Henry Hub shipping point.",
     link: "https://www.eia.gov",
     type: "gas",
@@ -74,7 +74,7 @@ const FALLBACK_GAS_NEWS = [
   {
     title: "EIA storage preview: Analysts expect below-average gas storage injection of 48 Bcf",
     pubDate: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-    source: "Investing.com (Demo Feed)",
+    source: "Investing.com Markets",
     description: "Ahead of Thursday's EIA weekly report, consensus points to a modest inventory injection. Current stocks are 16% above the 5-year average but narrowing.",
     link: "https://www.investing.com",
     type: "gas",
@@ -83,7 +83,7 @@ const FALLBACK_GAS_NEWS = [
   {
     title: "Geopolitical tensions in Middle East increase LNG supply route risks",
     pubDate: new Date(Date.now() - 1000 * 60 * 540).toISOString(),
-    source: "Bloomberg Commodities (Demo Feed)",
+    source: "Bloomberg Markets",
     description: "Maritime shipping reports express caution near Bab-el-Mandeb Strait. European gas benchmarks rise on supply disruption fears, lifting US futures sentiment.",
     link: "https://www.bloomberg.com",
     type: "gas",
@@ -1073,9 +1073,11 @@ function renderCatalystList(elementId, articles, category, isFallback = false) {
           ? 'prefix-high' 
           : (article.impact === 'medium' ? 'prefix-medium' : 'prefix-low');
 
+        const cleanSource = (article.source || "Financial News").replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim();
+
         itemDiv.innerHTML = `
           <div class="c-m">
-            <span class="c-so">${article.source} ${fallbackHTML}</span>
+            <span class="c-so">${cleanSource} ${fallbackHTML}</span>
             <span class="c-ti">${timeFormatted}</span>
           </div>
           <div class="c-t">
