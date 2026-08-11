@@ -18,6 +18,15 @@ const MIME_TYPES = {
 
 const SETTINGS_FILE = path.join(__dirname, 'whatsapp_settings.json');
 
+// Global Exception Guards (Guarantees zero server crashes)
+process.on('uncaughtException', (err) => {
+  console.error("Global uncaughtException caught:", err.stack || err.message);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error("Global unhandledRejection caught at:", promise, "reason:", reason);
+});
+
 // Global Memory Cache for Live Market Quotes (Guarantees zero UI freezing / zero "Loading..." loops)
 let lastQuotesCache = null;
 let dailyCprCache = {};

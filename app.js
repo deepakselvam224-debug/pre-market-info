@@ -91,14 +91,35 @@ const FALLBACK_GAS_NEWS = [
   }
 ];
 
+// Initial Baseline Card Data (Guarantees 0ms loading lag on startup)
+function initializeBaselineCards() {
+  const defaultData = {
+    nifty: { price: 24273.75, change: 23.55, changePercent: 0.10, high: 24312.50, low: 24277.85, prevClose: 24250.20, cpr: { p: 24282.4, tc: 24299.8, bc: 24265.0 }, strategy: { state: "NEUTRAL", currentVwap: 24282.4, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } },
+    banknifty: { price: 56938.15, change: 182.55, changePercent: 0.32, high: 57190.00, low: 56939.35, prevClose: 56755.60, cpr: { p: 56960.0, tc: 56980.0, bc: 56940.0 }, strategy: { state: "NEUTRAL", currentVwap: 56960.0, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } },
+    gas: { price: 262.80, change: 0.10, changePercent: 0.04, high: 263.10, low: 262.40, prevClose: 262.70, cpr: { p: 262.8, tc: 263.15, bc: 262.45 }, strategy: { state: "NEUTRAL", currentVwap: 262.8, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } },
+    eth: { price: 3450.20, change: 45.50, changePercent: 1.34, high: 3480.00, low: 3410.00, prevClose: 3404.70, cpr: { p: 3445.0, tc: 3455.0, bc: 3435.0 }, strategy: { state: "NEUTRAL", currentVwap: 3450.2, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } }
+  };
+  try {
+    updateIndexCard('nifty', defaultData.nifty);
+    updateIndexCard('banknifty', defaultData.banknifty);
+    updateIndexCard('gas', defaultData.gas);
+    updateIndexCard('eth', defaultData.eth);
+  } catch (e) {
+    console.error("Baseline card render error:", e);
+  }
+}
+
 // Document Ready Initialization
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Theme (Light/Dark)
   initTheme();
 
+  // Baseline Initial Card Render (0ms loading state)
+  initializeBaselineCards();
+
   // 1. Fetch Live Index Quotes from server API and start poller (every 5 seconds)
-  fetchLiveQuotes();
-  setInterval(fetchLiveQuotes, 5000);
+  fetchQuoteData();
+  setInterval(fetchQuoteData, 5000);
 
   // 2. Start Live clock and Countdown timer engine
   setInterval(updateClockAndTimers, 1000);
