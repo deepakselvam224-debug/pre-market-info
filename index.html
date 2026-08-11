@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=98.0">
+  <link rel="stylesheet" href="styles.css?v=99.0">
   <!-- TradingView Widget Script Loader -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 </head>
@@ -503,8 +503,8 @@
         </div>
         <!-- Asset Selector -->
         <div class="calc-asset-toggle">
-          <button class="asset-tab active" id="calc-asset-nifty" onclick="setCalcAsset('nifty')">NIFTY 50 (SL: 10 ₹ Constant)</button>
-          <button class="asset-tab" id="calc-asset-bank" onclick="setCalcAsset('banknifty')">BANK NIFTY (SL: 20 ₹ Constant)</button>
+          <button class="asset-tab active" id="calc-asset-nifty" onclick="setCalcAsset('nifty')">NIFTY 50 (SL: 10 Pts/₹ Constant)</button>
+          <button class="asset-tab" id="calc-asset-bank" onclick="setCalcAsset('banknifty')">BANK NIFTY (SL: 20 Pts/₹ Constant)</button>
         </div>
       </div>
 
@@ -523,15 +523,26 @@
             <input type="number" id="calc-capital" value="100000" step="5000" oninput="onCapitalChange()">
           </div>
 
-          <!-- Option Target Premium Gain Selection -->
+          <!-- Option Target Premium Gain Selection (Rupees ₹) -->
           <div class="input-group full-width" id="opt-target-group">
             <label>Option Target Premium Gain (Rupees ₹)</label>
             <div class="target-btn-group">
-              <button class="target-btn" id="btn-opt-20" onclick="setOptTargetVal(20)">+20 ₹</button>
-              <button class="target-btn active" id="btn-opt-30" onclick="setOptTargetVal(30)">+30 ₹</button>
+              <button class="target-btn active" id="btn-opt-20" onclick="setOptTargetVal(20)">+20 ₹</button>
+              <button class="target-btn" id="btn-opt-30" onclick="setOptTargetVal(30)">+30 ₹</button>
               <button class="target-btn" id="btn-opt-40" onclick="setOptTargetVal(40)">+40 ₹</button>
               <button class="target-btn" id="btn-opt-50" onclick="setOptTargetVal(50)">+50 ₹</button>
               <input type="number" class="custom-target-input" id="calc-custom-opt-target" placeholder="Custom..." oninput="onCustomTargetInput('opt')">
+            </div>
+          </div>
+
+          <!-- Index Spot Target Points Selection (Nifty/Bank Nifty Pts) -->
+          <div class="input-group full-width" id="spot-target-group">
+            <label>Index Spot Target Points (For Spot R:R Ratio Calculation)</label>
+            <div class="target-btn-group">
+              <button class="target-btn active" id="btn-target-30" onclick="setSpotTargetVal(30)">+30 Pts</button>
+              <button class="target-btn" id="btn-target-40" onclick="setSpotTargetVal(40)">+40 Pts</button>
+              <button class="target-btn" id="btn-target-50" onclick="setSpotTargetVal(50)">+50 Pts</button>
+              <input type="number" class="custom-target-input" id="calc-custom-spot-target" placeholder="Custom..." oninput="onCustomTargetInput('spot')">
             </div>
           </div>
         </div>
@@ -543,21 +554,29 @@
           </div>
           <div class="calc-res-box highlight-profit">
             <span class="res-lbl">EXPECTED TARGET OPTION PRICE</span>
-            <span class="res-val" id="res-target-prem">₹230.00 (+30.0 ₹)</span>
+            <span class="res-val" id="res-target-prem">₹220.00 (+20.0 ₹)</span>
           </div>
           <div class="calc-res-box highlight-profit">
-            <span class="res-lbl">NET RUPEES PROFIT</span>
-            <span class="res-val profit-text" id="res-net-profit">+₹15,000 (+15.00% ROI)</span>
+            <span class="res-lbl">GROSS RUPEES PROFIT</span>
+            <span class="res-val profit-text" id="res-gross-profit">+₹10,000 (+10.00% ROI)</span>
           </div>
-          <div class="calc-res-box highlight-sl">
+          <div class="calc-res-box highlight-comm">
+            <span class="res-lbl">ESTIMATED BROKERAGE / COMMISSION</span>
+            <span class="res-val comm-text" id="res-commission-val">₹1,000 (₹2/Qty Entry+Exit)</span>
+          </div>
+          <div class="calc-res-box highlight-profit full-width">
+            <span class="res-lbl">NET IN-HAND PROFIT (AFTER COMMISSION)</span>
+            <span class="res-val net-inhand-text" id="res-net-inhand">+₹9,000 (+9.00% Net ROI)</span>
+          </div>
+          <div class="calc-res-box full-width highlight-sl">
             <span class="res-lbl" id="sl-badge-label">CONSTANT STOP LOSS (NIFTY: 10 ₹ CONSTANT)</span>
             <span class="res-val sl-text" id="res-sl-text">SL Price: ₹190.00 (-10.0 ₹) ➔ Max Risk: -₹5,000 (-5.0%)</span>
           </div>
 
-          <!-- Visual Risk-to-Reward (R:R Ratio) Progress Bar -->
+          <!-- Visual Risk-to-Reward (Spot Index R:R Ratio) Progress Bar -->
           <div class="calc-res-box full-width highlight-rr">
             <div class="rr-header">
-              <span class="res-lbl">RISK-TO-REWARD RATIO</span>
+              <span class="res-lbl">SPOT INDEX RISK-TO-REWARD RATIO</span>
               <span class="rr-badge" id="res-rr-badge">1 : 3.0 R:R Ratio 🎯</span>
             </div>
             <div class="rr-bar-bg">
@@ -565,8 +584,8 @@
               <div class="rr-bar-reward" id="rr-bar-reward" style="width: 75%;"></div>
             </div>
             <div class="rr-legend">
-              <span class="rr-leg-risk" id="rr-leg-risk-text">Risk: 10 ₹ (-₹5,000)</span>
-              <span class="rr-leg-reward" id="rr-leg-reward-text">Reward: +30 ₹ (+₹15,000)</span>
+              <span class="rr-leg-risk" id="rr-leg-risk-text">Risk: 10 Pts (-₹5,000)</span>
+              <span class="rr-leg-reward" id="rr-leg-reward-text">Reward: +30 Pts (+₹10,000 Option)</span>
             </div>
           </div>
         </div>
@@ -734,6 +753,6 @@
   </main>
 
   <!-- Application JS Code -->
-  <script src="app.js?v=98.0"></script>
+  <script src="app.js?v=99.0"></script>
 </body>
 </html>

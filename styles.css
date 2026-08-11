@@ -2978,6 +2978,21 @@ body.light-theme .empty-impact-msg {
 .profit-text { color: #10b981 !important; }
 .sl-text { color: #f43f5e !important; font-size: 0.75rem; }
 
+.highlight-comm {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.comm-text {
+  color: #f59e0b !important;
+  font-size: 0.85rem;
+}
+
+.net-inhand-text {
+  font-size: 1.1rem !important;
+  font-weight: 900 !important;
+}
+
 .calc-res-box.full-width {
   grid-column: 1 / -1;
 }

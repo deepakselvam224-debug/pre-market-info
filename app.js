@@ -139,8 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* --- LIVE FULLY CUSTOMIZABLE ITM OPTION SCALP CALCULATOR ENGINE --- */
-let calcAsset = 'nifty'; // 'nifty' (10 ₹ SL) or 'banknifty' (20 ₹ SL)
-let optTargetVal = 30; // 20, 30, 40, 50 or custom
+let calcAsset = 'nifty'; // 'nifty' (10 Pts/₹ SL) or 'banknifty' (20 Pts/₹ SL)
+let optTargetVal = 20; // 20, 30, 40, 50 or custom
+let spotTargetVal = 30; // 30, 40, 50 or custom
 
 function setCalcAsset(asset) {
   calcAsset = asset;
@@ -161,11 +162,29 @@ function setOptTargetVal(val) {
   calculateScalpReturn();
 }
 
+function setSpotTargetVal(val) {
+  spotTargetVal = val;
+  document.querySelectorAll('#spot-target-group .target-btn').forEach(b => b.classList.remove('active'));
+  const b = document.getElementById(`btn-target-${val}`);
+  if (b) b.classList.add('active');
+  const customInp = document.getElementById('calc-custom-spot-target');
+  if (customInp) customInp.value = '';
+  calculateScalpReturn();
+}
+
 function onCustomTargetInput(mode) {
-  const val = parseFloat(document.getElementById('calc-custom-opt-target').value);
-  if (!isNaN(val) && val > 0) {
-    optTargetVal = val;
-    document.querySelectorAll('#opt-target-group .target-btn').forEach(b => b.classList.remove('active'));
+  if (mode === 'opt') {
+    const val = parseFloat(document.getElementById('calc-custom-opt-target').value);
+    if (!isNaN(val) && val > 0) {
+      optTargetVal = val;
+      document.querySelectorAll('#opt-target-group .target-btn').forEach(b => b.classList.remove('active'));
+    }
+  } else if (mode === 'spot') {
+    const val = parseFloat(document.getElementById('calc-custom-spot-target').value);
+    if (!isNaN(val) && val > 0) {
+      spotTargetVal = val;
+      document.querySelectorAll('#spot-target-group .target-btn').forEach(b => b.classList.remove('active'));
+    }
   }
   calculateScalpReturn();
 }
@@ -198,30 +217,38 @@ function calculateScalpReturn() {
   const qty = parseInt(qtyEl.value) || 500;
   const capital = buyPrice * qty;
 
+  // 1. Option Premium Gain Calculations (Target Premium Gain ₹)
   const premiumGain = optTargetVal;
   const targetPrice = buyPrice + premiumGain;
-  const netProfit = premiumGain * qty;
-  const roi = capital > 0 ? (netProfit / capital) * 100 : 0;
+  const grossProfit = premiumGain * qty;
+  const grossRoi = capital > 0 ? (grossProfit / capital) * 100 : 0;
 
-  // Constant Stop Loss (Nifty = 10 ₹ constant, Bank Nifty = 20 ₹ constant)
-  const slPremiumDrop = (calcAsset === 'nifty') ? 10 : 20;
-  const slPrice = buyPrice - slPremiumDrop;
-  const maxRisk = slPremiumDrop * qty;
+  // 2. Brokerage / Commission Calculation (₹2 per quantity: ₹1 entry + ₹1 exit)
+  const commission = qty * 2;
+  const netInHandProfit = grossProfit - commission;
+  const netInHandRoi = capital > 0 ? (netInHandProfit / capital) * 100 : 0;
+
+  // 3. Constant Stop Loss (Nifty = 10 Pts/₹ constant, Bank Nifty = 20 Pts/₹ constant)
+  const slConstant = (calcAsset === 'nifty') ? 10 : 20;
+  const slPrice = buyPrice - slConstant;
+  const maxRisk = slConstant * qty;
   const riskPercent = capital > 0 ? (maxRisk / capital) * 100 : 0;
 
-  // Risk-to-Reward Ratio Calculation
-  const rrRatio = (premiumGain / slPremiumDrop).toFixed(1);
+  // 4. Spot Index R:R Ratio Calculation (Spot Target Pts / Constant Spot SL Pts)
+  const spotRrRatio = (spotTargetVal / slConstant).toFixed(1);
 
-  // Visual Bar percentages
-  const totalBarVal = slPremiumDrop + premiumGain;
-  const riskBarPct = Math.round((slPremiumDrop / totalBarVal) * 100);
+  // Visual Bar percentages (based on Spot Target vs Spot SL)
+  const totalSpotBarVal = slConstant + spotTargetVal;
+  const riskBarPct = Math.round((slConstant / totalSpotBarVal) * 100);
   const rewardBarPct = 100 - riskBarPct;
 
   const formatRs = (num) => '₹' + Math.round(num).toLocaleString('en-IN');
 
   const capEl = document.getElementById('res-capital');
   const premEl = document.getElementById('res-target-prem');
-  const profitEl = document.getElementById('res-net-profit');
+  const grossProfitEl = document.getElementById('res-gross-profit');
+  const commEl = document.getElementById('res-commission-val');
+  const netInhandEl = document.getElementById('res-net-inhand');
   const slLabelEl = document.getElementById('sl-badge-label');
   const slEl = document.getElementById('res-sl-text');
 
@@ -233,23 +260,30 @@ function calculateScalpReturn() {
 
   if (capEl) capEl.textContent = formatRs(capital);
   if (premEl) premEl.textContent = `₹${targetPrice.toFixed(2)} (+${premiumGain.toFixed(1)} ₹)`;
-  if (profitEl) profitEl.textContent = `+${formatRs(netProfit)} (+${roi.toFixed(2)}% ROI)`;
+  if (grossProfitEl) grossProfitEl.textContent = `+${formatRs(grossProfit)} (+${grossRoi.toFixed(2)}% ROI)`;
+  if (commEl) commEl.textContent = `₹${commission.toLocaleString('en-IN')} (₹2/Qty Entry+Exit)`;
+  
+  if (netInhandEl) {
+    const sign = netInHandProfit >= 0 ? '+' : '';
+    netInhandEl.textContent = `${sign}${formatRs(netInHandProfit)} (${sign}${netInHandRoi.toFixed(2)}% Net ROI)`;
+    netInhandEl.className = netInHandProfit >= 0 ? 'res-val net-inhand-text profit-text' : 'res-val net-inhand-text sl-text';
+  }
 
   if (slLabelEl) {
     slLabelEl.textContent = (calcAsset === 'nifty')
-      ? `CONSTANT STOP LOSS (NIFTY: 10 ₹ CONSTANT)`
-      : `CONSTANT STOP LOSS (BANK NIFTY: 20 ₹ CONSTANT)`;
+      ? `CONSTANT STOP LOSS (NIFTY: 10 Pts/₹ CONSTANT)`
+      : `CONSTANT STOP LOSS (BANK NIFTY: 20 Pts/₹ CONSTANT)`;
   }
 
   if (slEl) {
-    slEl.textContent = `SL Price: ₹${slPrice.toFixed(2)} (-${slPremiumDrop.toFixed(1)} ₹) ➔ Max Risk: -${formatRs(maxRisk)} (-${riskPercent.toFixed(1)}%)`;
+    slEl.textContent = `SL Price: ₹${slPrice.toFixed(2)} (-${slConstant.toFixed(1)} ₹) ➔ Max Risk: -${formatRs(maxRisk)} (-${riskPercent.toFixed(1)}%)`;
   }
 
-  if (rrBadgeEl) rrBadgeEl.textContent = `1 : ${rrRatio} R:R Ratio 🎯`;
+  if (rrBadgeEl) rrBadgeEl.textContent = `1 : ${spotRrRatio} R:R Ratio 🎯`;
   if (rrRiskBarEl) rrRiskBarEl.style.width = `${riskBarPct}%`;
   if (rrRewardBarEl) rrRewardBarEl.style.width = `${rewardBarPct}%`;
-  if (rrRiskLegEl) rrRiskLegEl.textContent = `Risk: ${slPremiumDrop} ₹ (-${formatRs(maxRisk)})`;
-  if (rrRewardLegEl) rrRewardLegEl.textContent = `Reward: +${premiumGain} ₹ (+${formatRs(netProfit)})`;
+  if (rrRiskLegEl) rrRiskLegEl.textContent = `Risk: ${slConstant} Pts (-${formatRs(maxRisk)})`;
+  if (rrRewardLegEl) rrRewardLegEl.textContent = `Reward: +${spotTargetVal} Pts (+${formatRs(grossProfit)} Option)`;
 }
 
 /* --- OPTIONS CHAIN OI & MAX PAIN DESK POLLER --- */
