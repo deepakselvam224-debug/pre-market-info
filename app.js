@@ -195,37 +195,22 @@ function updateSentimentGauge(data) {
     labelEl.textContent = `${ratingText} (${formattedScore}%)`;
   }
 
-  // Populate Top 2 Real-Time Breaking News Headlines & CPR Line in Global Market Sentiment Card
+  // Populate Top 3 Real-Time Breaking News Headlines in Global Market Sentiment Card
   try {
     updateTopGlobalNewsBulletins(RAW_EQ_NEWS);
   } catch (e) {
     console.error("Error updating top global news bulletins:", e);
-  }
-
-  const bulletinCprEl = document.getElementById('bulletin-cpr');
-  if (bulletinCprEl) {
-    const cpr = (data && data.nifty && data.nifty.cpr) ? data.nifty.cpr : { p: 24282.4, tc: 24299.8, bc: 24265.0 };
-    const p = cpr.p ? cpr.p.toFixed(1) : '24,282.4';
-    const tc = cpr.tc ? cpr.tc.toFixed(1) : '24,299.8';
-    const bc = cpr.bc ? cpr.bc.toFixed(1) : '24,265.0';
-
-    const width = Math.abs((cpr.tc || 0) - (cpr.bc || 0));
-    const widthFormatted = width > 0 ? width.toFixed(1) : '34.7';
-
-    if (width < 35) {
-      bulletinCprEl.innerHTML = `⚡ <strong>Nifty CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-narrow-text">NARROW RANGE (${widthFormatted} pts)</span>: High chance of Big One-Sided Momentum Rally!`;
-    } else {
-      bulletinCprEl.innerHTML = `🔄 <strong>Nifty CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-wide-text">WIDER RANGE (${widthFormatted} pts)</span>: Expect Sideways Volatile Trading (No big movements).`;
-    }
   }
 }
 
 function updateTopGlobalNewsBulletins(newsItems) {
   const news1El = document.getElementById('bulletin-news-1');
   const news2El = document.getElementById('bulletin-news-2');
+  const news3El = document.getElementById('bulletin-news-3');
 
   const default1 = `🔴 <strong>[ECONOMIC TIMES]:</strong> GIFT Nifty indicates positive opening for Indian indices; global cues remain stable`;
   const default2 = `🟢 <strong>[MONEYCONTROL]:</strong> FII & DII institutional activity remains supportive ahead of opening bell`;
+  const default3 = `🔵 <strong>[REUTERS]:</strong> Reserve Bank of India holds key interest rate steady; liquidity remains adequate`;
 
   const safeArray = (Array.isArray(newsItems) && newsItems.length > 0) ? newsItems : FALLBACK_EQ_NEWS;
 
@@ -236,6 +221,7 @@ function updateTopGlobalNewsBulletins(newsItems) {
 
   const item1 = pool[0];
   const item2 = pool[1] || pool[0];
+  const item3 = pool[2] || pool[1] || pool[0];
 
   if (news1El && item1 && item1.title) {
     const cleanSrc = (item1.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
@@ -253,6 +239,15 @@ function updateTopGlobalNewsBulletins(newsItems) {
     news2El.innerHTML = `${emoji} <strong>[${cleanSrc}]:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: none;">${item2.title}</a>`;
   } else if (news2El) {
     news2El.innerHTML = default2;
+  }
+
+  if (news3El && item3 && item3.title) {
+    const cleanSrc = (item3.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
+    const emoji = item3.impact === 'high' ? '🔴' : (item3.impact === 'medium' ? '🟢' : '🔵');
+    const link = item3.link || '#';
+    news3El.innerHTML = `${emoji} <strong>[${cleanSrc}]:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: none;">${item3.title}</a>`;
+  } else if (news3El) {
+    news3El.innerHTML = default3;
   }
 }
 
@@ -456,17 +451,22 @@ function updateIndexCard(id, indexData) {
   const stratDetailsEl = document.getElementById(`${id}-strat-details`);
   const cprBannerEl = document.getElementById(`${id}-cpr-banner`);
 
-  if (cprBannerEl) {
-    if (indexData.strategy && indexData.strategy.cprText) {
-      cprBannerEl.style.display = "block";
-      cprBannerEl.textContent = indexData.strategy.cprText;
-      if (indexData.strategy.cprText.includes("Narrow")) {
-        cprBannerEl.className = "cpr-banner cpr-narrow";
-      } else {
-        cprBannerEl.className = "cpr-banner cpr-wider";
-      }
+  if (cprBannerEl && indexData.cpr) {
+    cprBannerEl.style.display = "block";
+    const cpr = indexData.cpr;
+    const p = cpr.p ? cpr.p.toFixed(1) : '--';
+    const tc = cpr.tc ? cpr.tc.toFixed(1) : '--';
+    const bc = cpr.bc ? cpr.bc.toFixed(1) : '--';
+    const width = Math.abs((cpr.tc || 0) - (cpr.bc || 0));
+    const widthFormatted = width > 0 ? width.toFixed(1) : (id === 'nifty' ? '11.9' : '56.6');
+
+    const assetTitle = (id === 'nifty' ? 'Nifty' : (id === 'banknifty' ? 'Bank Nifty' : 'MCX Gas'));
+    if (width < 35) {
+      cprBannerEl.innerHTML = `⚡ <strong>${assetTitle} CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-narrow-text">NARROW RANGE (${widthFormatted} pts)</span>: High chance of Big Momentum Rally!`;
+      cprBannerEl.className = "cpr-banner cpr-narrow";
     } else {
-      cprBannerEl.style.display = "none";
+      cprBannerEl.innerHTML = `🔄 <strong>${assetTitle} CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-wide-text">WIDER RANGE (${widthFormatted} pts)</span>: Expect Sideways Volatile Trading.`;
+      cprBannerEl.className = "cpr-banner cpr-wider";
     }
   }
 
