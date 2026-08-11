@@ -115,27 +115,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* --- LIVE INDEX QUOTES POLLING ENGINE (YAHOO PROXIED API) --- */
-async function fetchLiveQuotes() {
+async function fetchQuoteData() {
   try {
     const response = await fetch('/api/quotes');
     if (!response.ok) throw new Error("Quotes API failed");
     const data = await response.json();
+    if (!data) return;
     
-    // Update Nifty, Bank Nifty, MCX Gas, and Ethereum cards & ticker tape
-    updateIndexCard('nifty', data.nifty);
-    updateIndexCard('banknifty', data.banknifty);
-    updateIndexCard('gas', data.gas);
-    updateIndexCard('eth', data.eth);
+    // Safely update Nifty, Bank Nifty, MCX Gas, and Ethereum cards & ticker tape independently
+    try { if (data.nifty) updateIndexCard('nifty', data.nifty); } catch (e) { console.error("Error updating Nifty card:", e); }
+    try { if (data.banknifty) updateIndexCard('banknifty', data.banknifty); } catch (e) { console.error("Error updating Bank Nifty card:", e); }
+    try { if (data.gas) updateIndexCard('gas', data.gas); } catch (e) { console.error("Error updating Gas card:", e); }
+    try { if (data.eth) updateIndexCard('eth', data.eth); } catch (e) { console.error("Error updating ETH card:", e); }
     
     // Update USDINR and S&P 500 in the ticker
-    updateTickerItem('usdinr', data.usdinr);
-    updateTickerItem('spx', data.spx);
+    try { if (data.usdinr) updateTickerItem('usdinr', data.usdinr); } catch (e) { console.error("Error updating USDINR ticker:", e); }
+    try { if (data.spx) updateTickerItem('spx', data.spx); } catch (e) { console.error("Error updating SPX ticker:", e); }
     
-    // Update Market Sentiment Speedometer
-    updateSentimentGauge(data);
+    // Update Market Sentiment Speedometer & Top News Bulletins
+    try { updateSentimentGauge(data); } catch (e) { console.error("Error updating Sentiment gauge:", e); }
 
     // Update Daily Strategy Signal History Log table
-    updateTradeLogTable(data.tradeLog);
+    try { if (data.tradeLog) updateTradeLogTable(data.tradeLog); } catch (e) { console.error("Error updating Trade log table:", e); }
 
   } catch (error) {
     console.error("Quotes poller failed:", error);
@@ -145,10 +146,10 @@ async function fetchLiveQuotes() {
 function updateSentimentGauge(data) {
   if (!data) return;
   
-  const niftyChg = data.nifty ? data.nifty.changePercent : 0;
-  const bankChg = data.banknifty ? data.banknifty.changePercent : 0;
-  const spxChg = data.spx ? data.spx.changePercent : 0;
-  const usdinrChg = data.usdinr ? data.usdinr.changePercent : 0;
+  const niftyChg = data.nifty ? (data.nifty.changePercent || 0) : 0;
+  const bankChg = data.banknifty ? (data.banknifty.changePercent || 0) : 0;
+  const spxChg = data.spx ? (data.spx.changePercent || 0) : 0;
+  const usdinrChg = data.usdinr ? (data.usdinr.changePercent || 0) : 0;
 
   // Sentiment calculation: aggregate weighted changes
   let score = (niftyChg * 40) + (bankChg * 40) + (spxChg * 30) - (usdinrChg * 50);
@@ -173,13 +174,12 @@ function updateSentimentGauge(data) {
     labelEl.textContent = `${ratingText} (${formattedScore}%)`;
   }
 
-  // Populate dynamic Pre-Market Bulletins
-  const bulletinGlobalEl = document.getElementById('bulletin-global');
-  const bulletinForexEl = document.getElementById('bulletin-forex');
-  const bulletinCprEl = document.getElementById('bulletin-cpr');
-
   // Populate Top 2 Real-Time Breaking News Headlines & CPR Line in Global Market Sentiment Card
-  updateTopGlobalNewsBulletins(RAW_EQ_NEWS);
+  try {
+    updateTopGlobalNewsBulletins(RAW_EQ_NEWS);
+  } catch (e) {
+    console.error("Error updating top global news bulletins:", e);
+  }
 
   const bulletinCprEl = document.getElementById('bulletin-cpr');
   if (bulletinCprEl) {
@@ -206,17 +206,17 @@ function updateTopGlobalNewsBulletins(newsItems) {
   const default1 = `🔴 <strong>[ECONOMIC TIMES]:</strong> GIFT Nifty indicates positive opening for Indian indices; global cues remain stable`;
   const default2 = `🟢 <strong>[MONEYCONTROL]:</strong> FII & DII institutional activity remains supportive ahead of opening bell`;
 
-  const poolSource = (newsItems && newsItems.length > 0) ? newsItems : FALLBACK_EQ_NEWS;
+  const safeArray = (Array.isArray(newsItems) && newsItems.length > 0) ? newsItems : FALLBACK_EQ_NEWS;
 
-  // Filter high or medium impact items first
-  const highImpact = poolSource.filter(a => a.impact === 'high');
-  const mediumImpact = poolSource.filter(a => a.impact === 'medium');
-  const pool = [...highImpact, ...mediumImpact, ...poolSource];
+  // Filter high or medium impact items safely
+  const highImpact = safeArray.filter(a => a && a.impact === 'high');
+  const mediumImpact = safeArray.filter(a => a && a.impact === 'medium');
+  const pool = [...highImpact, ...mediumImpact, ...safeArray];
 
   const item1 = pool[0];
   const item2 = pool[1] || pool[0];
 
-  if (news1El && item1) {
+  if (news1El && item1 && item1.title) {
     const cleanSrc = (item1.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
     const emoji = item1.impact === 'high' ? '🔴' : (item1.impact === 'medium' ? '🟢' : '🔵');
     const link = item1.link || '#';
@@ -225,7 +225,7 @@ function updateTopGlobalNewsBulletins(newsItems) {
     news1El.innerHTML = default1;
   }
 
-  if (news2El && item2) {
+  if (news2El && item2 && item2.title) {
     const cleanSrc = (item2.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
     const emoji = item2.impact === 'high' ? '🔴' : (item2.impact === 'medium' ? '🟢' : '🔵');
     const link = item2.link || '#';
