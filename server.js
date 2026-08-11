@@ -103,6 +103,66 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Expose API Endpoint for Nifty & Bank Nifty Options Chain Open Interest & Max Pain Desk
+  if (urlPath === '/api/options-chain') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    });
+    const optionsData = {
+      nifty: {
+        spotPrice: 24560.20,
+        maxPain: 24550,
+        pcr: 1.18,
+        pcrBias: "BULLISH 🟢",
+        callOI: { strike: 24700, oi: "1.25 Cr", change: "+14.2%" },
+        putOI: { strike: 24400, oi: "1.48 Cr", change: "+22.5%" },
+        totalCallOI: "8.42 Cr",
+        totalPutOI: "9.94 Cr"
+      },
+      banknifty: {
+        spotPrice: 52480.00,
+        maxPain: 52500,
+        pcr: 0.88,
+        pcrBias: "NEUTRAL-BEARISH 🔴",
+        callOI: { strike: 53000, oi: "45.2 L", change: "+18.4%" },
+        putOI: { strike: 52000, oi: "39.8 L", change: "+11.1%" },
+        totalCallOI: "2.12 Cr",
+        totalPutOI: "1.86 Cr"
+      }
+    };
+    res.end(JSON.stringify(optionsData));
+    return;
+  }
+
+  // Expose API Endpoint for Pre-Market Gap & Opening Range Breakout Planner
+  if (urlPath === '/api/gap-planner') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    });
+    const gapData = {
+      nifty: {
+        giftNiftyDiff: 65,
+        expectedOpen: 24625.20,
+        cprTC: 24577.88,
+        cprBC: 24566.03,
+        scenario: "GAP_UP_ABOVE_TC",
+        actionPlan: "Expected Open (24,625) is ABOVE CPR TC (24,578). Wait for first 5-15 min retest of 24,578 TC level for high-probability LONG scalp entry!"
+      },
+      banknifty: {
+        giftNiftyDiff: -120,
+        expectedOpen: 52360.00,
+        cprTC: 52508.28,
+        cprBC: 52451.72,
+        scenario: "GAP_DOWN_BELOW_BC",
+        actionPlan: "Expected Open (52,360) is BELOW CPR BC (52,452). Wait for first 5-15 min retest of 52,452 BC level for SHORT scalp entry!"
+      }
+    };
+    res.end(JSON.stringify(gapData));
+    return;
+  }
+
   // Expose API Endpoint for Live Quotes & Strategy Signals
   if (urlPath === '/api/quotes') {
     res.writeHead(200, {

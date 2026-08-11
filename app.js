@@ -133,7 +133,138 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4. Fetch Feeds
   refreshAllFeeds();
   fetchFiiDiiData();
+  fetchOptionsChainData();
+  fetchGapPlannerData();
+  calculateScalpReturn();
 });
+
+/* --- LIVE ₹200 OPTION SCALP CALCULATOR ENGINE --- */
+let activeSpotTarget = 30;
+
+function setSpotTarget(targetPts) {
+  activeSpotTarget = targetPts;
+  const b30 = document.getElementById('btn-target-30');
+  const b40 = document.getElementById('btn-target-40');
+  if (b30) b30.classList.toggle('active', targetPts === 30);
+  if (b40) b40.classList.toggle('active', targetPts === 40);
+  calculateScalpReturn();
+}
+
+function calculateScalpReturn() {
+  const buyEl = document.getElementById('calc-buy-price');
+  const qtyEl = document.getElementById('calc-qty');
+  const deltaEl = document.getElementById('calc-delta');
+
+  if (!buyEl || !qtyEl || !deltaEl) return;
+
+  const buyPrice = parseFloat(buyEl.value) || 200;
+  const qty = parseInt(qtyEl.value) || 500;
+  const delta = parseFloat(deltaEl.value) || 0.78;
+
+  const capital = buyPrice * qty;
+  const premiumGain = activeSpotTarget * delta;
+  const targetPrice = buyPrice + premiumGain;
+  const netProfit = premiumGain * qty;
+  const roi = (netProfit / capital) * 100;
+
+  // Stop Loss (-10 spot points)
+  const slPremiumDrop = 10 * delta;
+  const slPrice = buyPrice - slPremiumDrop;
+  const maxRisk = slPremiumDrop * qty;
+  const riskPercent = (maxRisk / capital) * 100;
+
+  const formatRs = (num) => '₹' + Math.round(num).toLocaleString('en-IN');
+
+  const capEl = document.getElementById('res-capital');
+  const premEl = document.getElementById('res-target-prem');
+  const profitEl = document.getElementById('res-net-profit');
+  const slEl = document.getElementById('res-sl-text');
+
+  if (capEl) capEl.textContent = formatRs(capital);
+  if (premEl) premEl.textContent = `₹${targetPrice.toFixed(2)} (+${premiumGain.toFixed(1)} Pts)`;
+  if (profitEl) profitEl.textContent = `+${formatRs(netProfit)} (+${roi.toFixed(2)}% ROI)`;
+  if (slEl) slEl.textContent = `SL: ₹${slPrice.toFixed(2)} (-${slPremiumDrop.toFixed(1)} Pts) ➔ Max Risk: -${formatRs(maxRisk)} (-${riskPercent.toFixed(1)}%)`;
+}
+
+/* --- OPTIONS CHAIN OI & MAX PAIN DESK POLLER --- */
+async function fetchOptionsChainData() {
+  try {
+    const res = await fetch('/api/options-chain');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data) return;
+
+    if (data.nifty) {
+      const n = data.nifty;
+      const pcrBadge = document.getElementById('nifty-pcr-badge');
+      const maxPain = document.getElementById('nifty-max-pain');
+      const callRes = document.getElementById('nifty-call-res');
+      const putSup = document.getElementById('nifty-put-sup');
+
+      if (pcrBadge) pcrBadge.textContent = `PCR: ${n.pcr} (${n.pcrBias})`;
+      if (maxPain) maxPain.textContent = n.maxPain.toLocaleString('en-IN');
+      if (callRes) callRes.textContent = `${n.callOI.strike.toLocaleString('en-IN')} CE (${n.callOI.oi})`;
+      if (putSup) putSup.textContent = `${n.putOI.strike.toLocaleString('en-IN')} PE (${n.putOI.oi})`;
+    }
+
+    if (data.banknifty) {
+      const b = data.banknifty;
+      const pcrBadge = document.getElementById('bank-pcr-badge');
+      const maxPain = document.getElementById('bank-max-pain');
+      const callRes = document.getElementById('bank-call-res');
+      const putSup = document.getElementById('bank-put-sup');
+
+      if (pcrBadge) pcrBadge.textContent = `PCR: ${b.pcr} (${b.pcrBias})`;
+      if (maxPain) maxPain.textContent = b.maxPain.toLocaleString('en-IN');
+      if (callRes) callRes.textContent = `${b.callOI.strike.toLocaleString('en-IN')} CE (${b.callOI.oi})`;
+      if (putSup) putSup.textContent = `${b.putOI.strike.toLocaleString('en-IN')} PE (${b.putOI.oi})`;
+    }
+  } catch (e) {
+    console.error("Options chain fetch error:", e);
+  }
+}
+
+/* --- PRE-MARKET GAP & ORB PLANNER POLLER --- */
+async function fetchGapPlannerData() {
+  try {
+    const res = await fetch('/api/gap-planner');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data) return;
+
+    if (data.nifty) {
+      const n = data.nifty;
+      const openEl = document.getElementById('nifty-predicted-open');
+      const scenEl = document.getElementById('nifty-open-scenario');
+      const actEl = document.getElementById('nifty-open-action');
+
+      const sign = n.giftNiftyDiff >= 0 ? '+' : '';
+      if (openEl) {
+        openEl.textContent = `${sign}${n.giftNiftyDiff} Pts ➔ ${n.expectedOpen.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        openEl.className = n.giftNiftyDiff >= 0 ? 'gap-val gap-up' : 'gap-val gap-down';
+      }
+      if (scenEl) scenEl.textContent = n.scenario.replace(/_/g, ' ');
+      if (actEl) actEl.innerHTML = `💡 <strong>Strategy:</strong> ${n.actionPlan}`;
+    }
+
+    if (data.banknifty) {
+      const b = data.banknifty;
+      const openEl = document.getElementById('bank-predicted-open');
+      const scenEl = document.getElementById('bank-open-scenario');
+      const actEl = document.getElementById('bank-open-action');
+
+      const sign = b.giftNiftyDiff >= 0 ? '+' : '';
+      if (openEl) {
+        openEl.textContent = `${sign}${b.giftNiftyDiff} Pts ➔ ${b.expectedOpen.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        openEl.className = b.giftNiftyDiff >= 0 ? 'gap-val gap-down' : 'gap-val gap-down';
+      }
+      if (scenEl) scenEl.textContent = b.scenario.replace(/_/g, ' ');
+      if (actEl) actEl.innerHTML = `💡 <strong>Strategy:</strong> ${b.actionPlan}`;
+    }
+  } catch (e) {
+    console.error("Gap planner fetch error:", e);
+  }
+}
 
 /* --- LIVE INDEX QUOTES POLLING ENGINE (YAHOO PROXIED API) --- */
 async function fetchQuoteData() {

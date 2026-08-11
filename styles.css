@@ -2707,3 +2707,220 @@ body.light-theme .empty-impact-msg {
   border-radius: 4px;
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
+
+/* --- SEGMENT D: VOLATILITY WARNING BANNER --- */
+.volatility-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.25), rgba(245, 158, 11, 0.25));
+  border-bottom: 1px solid rgba(244, 63, 94, 0.4);
+  padding: 0.6rem 1.5rem;
+  font-size: 0.85rem;
+  color: #fef2f2;
+}
+.warning-icon {
+  font-size: 1.1rem;
+  animation: pulse 1.2s infinite;
+}
+
+/* --- SEGMENT B: PRE-MARKET GAP & ORB PLANNER --- */
+.gap-planner-section {
+  padding: 1rem 1.5rem 0 1.5rem;
+}
+.gap-planner-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+.gap-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.gap-card-header h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+.gap-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+.gap-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.gap-asset {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  letter-spacing: 0.05em;
+}
+.gap-val {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.gap-val.gap-up { color: #10b981; }
+.gap-val.gap-down { color: #f43f5e; }
+.gap-sub {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+.gap-action {
+  font-size: 0.8rem;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid #38bdf8;
+}
+.gap-divider-v {
+  width: 1px;
+  height: 80%;
+  background: var(--border-color);
+}
+
+/* --- SEGMENT A: OPTIONS CHAIN OI & MAX PAIN DESK --- */
+.options-chain-card {
+  margin-bottom: 1.5rem;
+}
+.options-oi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding: 1.25rem;
+}
+.oi-asset-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1rem;
+}
+.oi-asset-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+.pcr-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+.pcr-bullish { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.pcr-bearish { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); }
+
+.oi-stat-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.oi-stat-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+.oi-label { color: var(--text-dark); }
+.oi-val { font-weight: 700; color: #f8fafc; }
+.oi-val.val-res { color: #f43f5e; }
+.oi-val.val-sup { color: #10b981; }
+
+/* --- SEGMENT C: LIVE ₹200 OPTION SCALP CALCULATOR --- */
+.scalp-calc-card {
+  margin-bottom: 1.5rem;
+}
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+  padding: 1.25rem;
+}
+.calc-inputs-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.input-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+.input-group input {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem;
+  color: #f8fafc;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.target-btn-group {
+  display: flex;
+  gap: 0.5rem;
+}
+.target-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: #cbd5e1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.target-btn.active {
+  background: #38bdf8;
+  color: #0b1329;
+  border-color: #38bdf8;
+}
+
+.calc-results-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.calc-res-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.res-lbl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.res-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #f8fafc;
+}
+.profit-text { color: #10b981 !important; }
+.sl-text { color: #f43f5e !important; font-size: 0.75rem; }
