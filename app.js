@@ -138,15 +138,87 @@ document.addEventListener('DOMContentLoaded', () => {
   calculateScalpReturn();
 });
 
-/* --- LIVE ₹200 OPTION SCALP CALCULATOR ENGINE --- */
-let activeSpotTarget = 30;
+/* --- LIVE FULLY CUSTOMIZABLE ITM OPTION SCALP CALCULATOR ENGINE --- */
+let calcAsset = 'nifty'; // 'nifty' (10 pts SL) or 'banknifty' (20 pts SL)
+let targetMode = 'spot'; // 'spot' (Index Points) or 'opt' (Option Rupees)
+let spotTargetVal = 30; // 30, 40, 50 or custom
+let optTargetVal = 30; // 20, 30, 40, 50 or custom
 
-function setSpotTarget(targetPts) {
-  activeSpotTarget = targetPts;
-  const b30 = document.getElementById('btn-target-30');
-  const b40 = document.getElementById('btn-target-40');
-  if (b30) b30.classList.toggle('active', targetPts === 30);
-  if (b40) b40.classList.toggle('active', targetPts === 40);
+function setCalcAsset(asset) {
+  calcAsset = asset;
+  const nBtn = document.getElementById('calc-asset-nifty');
+  const bBtn = document.getElementById('calc-asset-bank');
+  if (nBtn) nBtn.classList.toggle('active', asset === 'nifty');
+  if (bBtn) bBtn.classList.toggle('active', asset === 'banknifty');
+  calculateScalpReturn();
+}
+
+function setTargetMode(mode) {
+  targetMode = mode;
+  const sBtn = document.getElementById('mode-spot-btn');
+  const oBtn = document.getElementById('mode-opt-btn');
+  const sGrp = document.getElementById('spot-target-group');
+  const oGrp = document.getElementById('opt-target-group');
+
+  if (sBtn) sBtn.classList.toggle('active', mode === 'spot');
+  if (oBtn) oBtn.classList.toggle('active', mode === 'opt');
+  if (sGrp) sGrp.style.display = (mode === 'spot') ? 'block' : 'none';
+  if (oGrp) oGrp.style.display = (mode === 'opt') ? 'block' : 'none';
+  calculateScalpReturn();
+}
+
+function setSpotTargetVal(val) {
+  spotTargetVal = val;
+  document.querySelectorAll('#spot-target-group .target-btn').forEach(b => b.classList.remove('active'));
+  const b = document.getElementById(`btn-target-${val}`);
+  if (b) b.classList.add('active');
+  const customInp = document.getElementById('calc-custom-spot-target');
+  if (customInp) customInp.value = '';
+  calculateScalpReturn();
+}
+
+function setOptTargetVal(val) {
+  optTargetVal = val;
+  document.querySelectorAll('#opt-target-group .target-btn').forEach(b => b.classList.remove('active'));
+  const b = document.getElementById(`btn-opt-${val}`);
+  if (b) b.classList.add('active');
+  const customInp = document.getElementById('calc-custom-opt-target');
+  if (customInp) customInp.value = '';
+  calculateScalpReturn();
+}
+
+function onCustomTargetInput(mode) {
+  if (mode === 'spot') {
+    const val = parseFloat(document.getElementById('calc-custom-spot-target').value);
+    if (!isNaN(val) && val > 0) {
+      spotTargetVal = val;
+      document.querySelectorAll('#spot-target-group .target-btn').forEach(b => b.classList.remove('active'));
+    }
+  } else {
+    const val = parseFloat(document.getElementById('calc-custom-opt-target').value);
+    if (!isNaN(val) && val > 0) {
+      optTargetVal = val;
+      document.querySelectorAll('#opt-target-group .target-btn').forEach(b => b.classList.remove('active'));
+    }
+  }
+  calculateScalpReturn();
+}
+
+function onBuyPriceOrQtyChange() {
+  const buyPrice = parseFloat(document.getElementById('calc-buy-price').value) || 200;
+  const qty = parseInt(document.getElementById('calc-qty').value) || 500;
+  const capital = buyPrice * qty;
+  const capEl = document.getElementById('calc-capital');
+  if (capEl) capEl.value = Math.round(capital);
+  calculateScalpReturn();
+}
+
+function onCapitalChange() {
+  const capital = parseFloat(document.getElementById('calc-capital').value) || 100000;
+  const buyPrice = parseFloat(document.getElementById('calc-buy-price').value) || 200;
+  const qty = Math.round(capital / buyPrice);
+  const qtyEl = document.getElementById('calc-qty');
+  if (qtyEl) qtyEl.value = qty;
   calculateScalpReturn();
 }
 
@@ -160,30 +232,47 @@ function calculateScalpReturn() {
   const buyPrice = parseFloat(buyEl.value) || 200;
   const qty = parseInt(qtyEl.value) || 500;
   const delta = parseFloat(deltaEl.value) || 0.78;
-
   const capital = buyPrice * qty;
-  const premiumGain = activeSpotTarget * delta;
+
+  let premiumGain = 0;
+
+  if (targetMode === 'spot') {
+    premiumGain = spotTargetVal * delta;
+  } else {
+    premiumGain = optTargetVal;
+  }
+
   const targetPrice = buyPrice + premiumGain;
   const netProfit = premiumGain * qty;
-  const roi = (netProfit / capital) * 100;
+  const roi = capital > 0 ? (netProfit / capital) * 100 : 0;
 
-  // Stop Loss (-10 spot points)
-  const slPremiumDrop = 10 * delta;
+  // Constant Stop Loss (Nifty = 10 Pts constant, Bank Nifty = 20 Pts constant)
+  const slPremiumDrop = (calcAsset === 'nifty') ? 10 : 20;
   const slPrice = buyPrice - slPremiumDrop;
   const maxRisk = slPremiumDrop * qty;
-  const riskPercent = (maxRisk / capital) * 100;
+  const riskPercent = capital > 0 ? (maxRisk / capital) * 100 : 0;
 
   const formatRs = (num) => '₹' + Math.round(num).toLocaleString('en-IN');
 
   const capEl = document.getElementById('res-capital');
   const premEl = document.getElementById('res-target-prem');
   const profitEl = document.getElementById('res-net-profit');
+  const slLabelEl = document.getElementById('sl-badge-label');
   const slEl = document.getElementById('res-sl-text');
 
   if (capEl) capEl.textContent = formatRs(capital);
-  if (premEl) premEl.textContent = `₹${targetPrice.toFixed(2)} (+${premiumGain.toFixed(1)} Pts)`;
+  if (premEl) premEl.textContent = `₹${targetPrice.toFixed(2)} (+${premiumGain.toFixed(1)} Pts/₹)`;
   if (profitEl) profitEl.textContent = `+${formatRs(netProfit)} (+${roi.toFixed(2)}% ROI)`;
-  if (slEl) slEl.textContent = `SL: ₹${slPrice.toFixed(2)} (-${slPremiumDrop.toFixed(1)} Pts) ➔ Max Risk: -${formatRs(maxRisk)} (-${riskPercent.toFixed(1)}%)`;
+
+  if (slLabelEl) {
+    slLabelEl.textContent = (calcAsset === 'nifty')
+      ? `CONSTANT STOP LOSS (NIFTY: 10 PTS CONSTANT)`
+      : `CONSTANT STOP LOSS (BANK NIFTY: 20 PTS CONSTANT)`;
+  }
+
+  if (slEl) {
+    slEl.textContent = `SL Price: ₹${slPrice.toFixed(2)} (-${slPremiumDrop.toFixed(1)} Pts/₹) ➔ Max Risk: -${formatRs(maxRisk)} (-${riskPercent.toFixed(1)}%)`;
+  }
 }
 
 /* --- OPTIONS CHAIN OI & MAX PAIN DESK POLLER --- */

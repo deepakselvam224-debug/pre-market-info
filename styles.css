@@ -2842,7 +2842,26 @@ body.light-theme .empty-impact-msg {
 .oi-val.val-res { color: #f43f5e; }
 .oi-val.val-sup { color: #10b981; }
 
-/* --- SEGMENT C: LIVE ₹200 OPTION SCALP CALCULATOR --- */
+.calc-asset-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+.asset-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: #cbd5e1;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.asset-tab.active {
+  background: #38bdf8;
+  color: #0b1329;
+  border-color: #38bdf8;
+}
+
 .scalp-calc-card {
   margin-bottom: 1.5rem;
 }
@@ -2856,6 +2875,40 @@ body.light-theme .empty-impact-msg {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+}
+.input-group.full-width {
+  grid-column: 1 / -1;
+}
+.mode-toggle-group {
+  display: flex;
+  gap: 0.5rem;
+}
+.mode-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: #cbd5e1;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mode-btn.active {
+  background: #10b981;
+  color: #0b1329;
+  border-color: #10b981;
+}
+.custom-target-input {
+  max-width: 100px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  color: #f8fafc;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 .input-group {
   display: flex;

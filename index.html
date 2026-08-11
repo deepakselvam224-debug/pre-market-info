@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=95.0">
+  <link rel="stylesheet" href="styles.css?v=96.0">
   <!-- TradingView Widget Script Loader -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 </head>
@@ -490,7 +490,7 @@
       </div>
     </section>
 
-    <!-- SEGMENT C: LIVE ₹200 OPTION SCALP & RISK/REWARD CALCULATOR -->
+    <!-- SEGMENT C: LIVE CUSTOMIZABLE ITM OPTION SCALP & RISK/REWARD CALCULATOR -->
     <section class="section-card scalp-calc-card">
       <div class="card-header">
         <div class="title-with-icon">
@@ -499,7 +499,12 @@
               <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm5 12H7v-.87c0-1.67 3.33-2.53 5-2.53s5 .86 5 2.53v.87z" fill="currentColor"/>
             </svg>
           </span>
-          <h3>Live ₹200 ITM Option Scalp & Risk/Reward Calculator (500 Qty / 10 Lots)</h3>
+          <h3>Customizable ITM Option Scalp & Risk/Reward Calculator</h3>
+        </div>
+        <!-- Asset Selector -->
+        <div class="calc-asset-toggle">
+          <button class="asset-tab active" id="calc-asset-nifty" onclick="setCalcAsset('nifty')">NIFTY 50 (SL: 10 Pts Constant)</button>
+          <button class="asset-tab" id="calc-asset-bank" onclick="setCalcAsset('banknifty')">BANK NIFTY (SL: 20 Pts Constant)</button>
         </div>
       </div>
 
@@ -507,41 +512,69 @@
         <div class="calc-inputs-col">
           <div class="input-group">
             <label>Contract Buy Price (₹)</label>
-            <input type="number" id="calc-buy-price" value="200.00" step="1" oninput="calculateScalpReturn()">
+            <input type="number" id="calc-buy-price" value="200.00" step="1" oninput="onBuyPriceOrQtyChange()">
           </div>
           <div class="input-group">
-            <label>Quantity (Lots x 50)</label>
-            <input type="number" id="calc-qty" value="500" step="50" oninput="calculateScalpReturn()">
+            <label>Quantity (Lots / Qty)</label>
+            <input type="number" id="calc-qty" value="500" step="50" oninput="onBuyPriceOrQtyChange()">
+          </div>
+          <div class="input-group">
+            <label>Required Capital (₹)</label>
+            <input type="number" id="calc-capital" value="100000" step="5000" oninput="onCapitalChange()">
           </div>
           <div class="input-group">
             <label>Option Delta (Δ)</label>
-            <input type="number" id="calc-delta" value="0.78" step="0.01" min="0.5" max="1.0" oninput="calculateScalpReturn()">
+            <input type="number" id="calc-delta" value="0.78" step="0.01" min="0.1" max="1.0" oninput="calculateScalpReturn()">
           </div>
-          <div class="input-group">
-            <label>Nifty Spot Target</label>
+
+          <!-- Customizable Target Mode Selection -->
+          <div class="input-group full-width">
+            <label>Expected Target Mode</label>
+            <div class="mode-toggle-group">
+              <button class="mode-btn active" id="mode-spot-btn" onclick="setTargetMode('spot')">Spot Points (Pts)</button>
+              <button class="mode-btn" id="mode-opt-btn" onclick="setTargetMode('opt')">Option Premium (₹)</button>
+            </div>
+          </div>
+
+          <!-- Target Quick Selection & Custom Input -->
+          <div class="input-group full-width" id="spot-target-group">
+            <label>Spot Target Points (Nifty/Bank Nifty Pts)</label>
             <div class="target-btn-group">
-              <button class="target-btn active" id="btn-target-30" onclick="setSpotTarget(30)">+30 Pts</button>
-              <button class="target-btn" id="btn-target-40" onclick="setSpotTarget(40)">+40 Pts</button>
+              <button class="target-btn active" id="btn-target-30" onclick="setSpotTargetVal(30)">+30 Pts</button>
+              <button class="target-btn" id="btn-target-40" onclick="setSpotTargetVal(40)">+40 Pts</button>
+              <button class="target-btn" id="btn-target-50" onclick="setSpotTargetVal(50)">+50 Pts</button>
+              <input type="number" class="custom-target-input" id="calc-custom-spot-target" placeholder="Custom..." oninput="onCustomTargetInput('spot')">
+            </div>
+          </div>
+
+          <div class="input-group full-width" id="opt-target-group" style="display: none;">
+            <label>Option Target Premium Gain (Rupees ₹)</label>
+            <div class="target-btn-group">
+              <button class="target-btn" id="btn-opt-20" onclick="setOptTargetVal(20)">+20 ₹</button>
+              <button class="target-btn" id="btn-opt-30" onclick="setOptTargetVal(30)">+30 ₹</button>
+              <button class="target-btn" id="btn-opt-40" onclick="setOptTargetVal(40)">+40 ₹</button>
+              <button class="target-btn" id="btn-opt-50" onclick="setOptTargetVal(50)">+50 ₹</button>
+              <input type="number" class="custom-target-input" id="calc-custom-opt-target" placeholder="Custom..." oninput="onCustomTargetInput('opt')">
             </div>
           </div>
         </div>
 
         <div class="calc-results-col">
           <div class="calc-res-box highlight-capital">
-            <span class="res-lbl">CAPITAL DEPLOYED</span>
+            <span class="res-lbl">REQUIRED CAPITAL DEPLOYED</span>
             <span class="res-val" id="res-capital">₹1,00,000</span>
           </div>
           <div class="calc-res-box highlight-profit">
-            <span class="res-lbl">EXPECTED TARGET PREMIUM</span>
-            <span class="res-val" id="res-target-prem">₹223.40 (+23.4 Pts)</span>
+            <span class="res-lbl">EXPECTED TARGET OPTION PRICE</span>
+            <span class="res-val" id="res-target-prem">₹223.40 (+23.4 Pts/₹)</span>
           </div>
           <div class="calc-res-box highlight-profit">
             <span class="res-lbl">NET RUPEES PROFIT</span>
             <span class="res-val profit-text" id="res-net-profit">+₹11,700 (+11.7% ROI)</span>
           </div>
           <div class="calc-res-box highlight-sl">
-            <span class="res-lbl">STOP LOSS (-10 SPOT PTS)</span>
-            <span class="res-val sl-text" id="res-sl-text">SL: ₹192.20 (-7.8 Pts) ➔ Max Risk: -₹3,900 (-3.9%)</span>
+            <span class="res-lbl" id="sl-badge-label">CONSTANT STOP LOSS (NIFTY: 10 PTS CONSTANT)</span>
+            <span class="res-val sl-text" id="res-sl-text">SL Price: ₹190.00 (-10.0 Pts/₹) ➔ Max Risk: -₹5,000 (-5.0%)</span>
           </div>
         </div>
       </div>
@@ -708,6 +741,6 @@
   </main>
 
   <!-- Application JS Code -->
-  <script src="app.js?v=95.0"></script>
+  <script src="app.js?v=96.0"></script>
 </body>
 </html>
