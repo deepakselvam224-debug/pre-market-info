@@ -225,19 +225,17 @@ function onCapitalChange() {
 function calculateScalpReturn() {
   const buyEl = document.getElementById('calc-buy-price');
   const qtyEl = document.getElementById('calc-qty');
-  const deltaEl = document.getElementById('calc-delta');
 
-  if (!buyEl || !qtyEl || !deltaEl) return;
+  if (!buyEl || !qtyEl) return;
 
   const buyPrice = parseFloat(buyEl.value) || 200;
   const qty = parseInt(qtyEl.value) || 500;
-  const delta = parseFloat(deltaEl.value) || 0.78;
   const capital = buyPrice * qty;
 
   let premiumGain = 0;
 
   if (targetMode === 'spot') {
-    premiumGain = spotTargetVal * delta;
+    premiumGain = spotTargetVal;
   } else {
     premiumGain = optTargetVal;
   }
