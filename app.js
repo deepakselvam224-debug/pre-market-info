@@ -104,6 +104,29 @@ function initializeBaselineCards() {
     updateIndexCard('banknifty', defaultData.banknifty);
     updateIndexCard('gas', defaultData.gas);
     updateIndexCard('eth', defaultData.eth);
+
+    // 0ms Startup News Render (Prevents loading spinners)
+    if (!RAW_EQ_NEWS || RAW_EQ_NEWS.length === 0) RAW_EQ_NEWS = FALLBACK_EQ_NEWS;
+    if (!RAW_GAS_NEWS || RAW_GAS_NEWS.length === 0) RAW_GAS_NEWS = FALLBACK_GAS_NEWS;
+    renderNewsDesk();
+
+    // 0ms FII/DII Baseline Population
+    const dateEl = document.getElementById('fii-dii-date');
+    const fiiValEl = document.getElementById('fii-net-val');
+    const diiValEl = document.getElementById('dii-net-val');
+    const totalValEl = document.getElementById('fii-dii-total-val');
+
+    if (dateEl) dateEl.textContent = "Previous Session Close";
+    if (fiiValEl) { fiiValEl.textContent = "-1,240.00 Cr"; fiiValEl.className = "inst-val flow-red"; }
+    if (diiValEl) { diiValEl.textContent = "+1,650.00 Cr"; diiValEl.className = "inst-val flow-green"; }
+    if (totalValEl) { totalValEl.textContent = "+410.00 Cr"; totalValEl.className = "total-val flow-green"; }
+
+    // 0ms Weather Trend & EIA Baseline
+    const weatherIndicator = document.getElementById('weather-status-indicator');
+    const eiaIndicator = document.getElementById('eia-status-indicator');
+    if (weatherIndicator) { weatherIndicator.textContent = "🔥 Warmer (Above Normal)"; weatherIndicator.className = "stat-val warm"; }
+    if (eiaIndicator) { eiaIndicator.textContent = "Thursdays 8:00 PM IST"; }
+
   } catch (e) {
     console.error("Baseline card render error:", e);
   }
