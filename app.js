@@ -178,8 +178,25 @@ function updateSentimentGauge(data) {
   const bulletinForexEl = document.getElementById('bulletin-forex');
   const bulletinCprEl = document.getElementById('bulletin-cpr');
 
-  // Populate Top 2 Real-Time Breaking News Headlines in Global Market Sentiment Card
+  // Populate Top 2 Real-Time Breaking News Headlines & CPR Line in Global Market Sentiment Card
   updateTopGlobalNewsBulletins(RAW_EQ_NEWS);
+
+  const bulletinCprEl = document.getElementById('bulletin-cpr');
+  if (bulletinCprEl) {
+    const cpr = (data && data.nifty && data.nifty.cpr) ? data.nifty.cpr : { p: 24282.4, tc: 24299.8, bc: 24265.0 };
+    const p = cpr.p ? cpr.p.toFixed(1) : '24,282.4';
+    const tc = cpr.tc ? cpr.tc.toFixed(1) : '24,299.8';
+    const bc = cpr.bc ? cpr.bc.toFixed(1) : '24,265.0';
+
+    const width = Math.abs((cpr.tc || 0) - (cpr.bc || 0));
+    const widthFormatted = width > 0 ? width.toFixed(1) : '34.7';
+
+    if (width < 35) {
+      bulletinCprEl.innerHTML = `⚡ <strong>Nifty CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-narrow-text">NARROW RANGE (${widthFormatted} pts)</span>: High chance of Big One-Sided Momentum Rally!`;
+    } else {
+      bulletinCprEl.innerHTML = `🔄 <strong>Nifty CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-wide-text">WIDER RANGE (${widthFormatted} pts)</span>: Expect Sideways Volatile Trading (No big movements).`;
+    }
+  }
 }
 
 function updateTopGlobalNewsBulletins(newsItems) {
