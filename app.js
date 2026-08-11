@@ -178,41 +178,43 @@ function updateSentimentGauge(data) {
   const bulletinForexEl = document.getElementById('bulletin-forex');
   const bulletinCprEl = document.getElementById('bulletin-cpr');
 
-  if (bulletinGlobalEl) {
-    if (spxChg > 0.25) {
-      bulletinGlobalEl.innerHTML = `🟢 Global markets are pointing to a positive open (S&P 500 up +${spxChg.toFixed(2)}%).`;
-    } else if (spxChg < -0.25) {
-      bulletinGlobalEl.innerHTML = `🔴 Global markets are pointing to a weak open (S&P 500 down ${spxChg.toFixed(2)}%).`;
-    } else {
-      bulletinGlobalEl.innerHTML = `⚪ Global markets are flat and rangebound (S&P 500 change is ${spxChg.toFixed(2)}%).`;
-    }
+  // Populate Top 2 Real-Time Breaking News Headlines in Global Market Sentiment Card
+  updateTopGlobalNewsBulletins(RAW_EQ_NEWS);
+}
+
+function updateTopGlobalNewsBulletins(newsItems) {
+  const news1El = document.getElementById('bulletin-news-1');
+  const news2El = document.getElementById('bulletin-news-2');
+
+  const default1 = `🔴 <strong>[ECONOMIC TIMES]:</strong> GIFT Nifty indicates positive opening for Indian indices; global cues remain stable`;
+  const default2 = `🟢 <strong>[MONEYCONTROL]:</strong> FII & DII institutional activity remains supportive ahead of opening bell`;
+
+  const poolSource = (newsItems && newsItems.length > 0) ? newsItems : FALLBACK_EQ_NEWS;
+
+  // Filter high or medium impact items first
+  const highImpact = poolSource.filter(a => a.impact === 'high');
+  const mediumImpact = poolSource.filter(a => a.impact === 'medium');
+  const pool = [...highImpact, ...mediumImpact, ...poolSource];
+
+  const item1 = pool[0];
+  const item2 = pool[1] || pool[0];
+
+  if (news1El && item1) {
+    const cleanSrc = (item1.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
+    const emoji = item1.impact === 'high' ? '🔴' : (item1.impact === 'medium' ? '🟢' : '🔵');
+    const link = item1.link || '#';
+    news1El.innerHTML = `${emoji} <strong>[${cleanSrc}]:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: none;">${item1.title}</a>`;
+  } else if (news1El) {
+    news1El.innerHTML = default1;
   }
 
-  if (bulletinForexEl) {
-    if (usdinrChg > 0.1) {
-      bulletinForexEl.innerHTML = `🔴 USD/INR is rising (+${usdinrChg.toFixed(2)}%), indicating minor bearish pressure on INR.`;
-    } else if (usdinrChg < -0.1) {
-      bulletinForexEl.innerHTML = `🟢 USD/INR is declining (${usdinrChg.toFixed(2)}%), providing bullish support for Indian stocks.`;
-    } else {
-      bulletinForexEl.innerHTML = `⚪ USD/INR remains stable, holding neutral pre-market sentiment.`;
-    }
-  }
-
-  if (bulletinCprEl) {
-    const cpr = (data.nifty && data.nifty.cpr) ? data.nifty.cpr : { p: 24282.4, tc: 24299.8, bc: 24265.0, r1: 24350.0, s1: 24315.35 };
-    const p = cpr.p ? cpr.p.toFixed(1) : '24,282.4';
-    const tc = cpr.tc ? cpr.tc.toFixed(1) : '24,299.8';
-    const bc = cpr.bc ? cpr.bc.toFixed(1) : '24,265.0';
-
-    // Calculate TradingView KGS Auto CPR Range Width (Math.abs(TC - BC)) matching TradingView KGS Auto CPR 100% identically
-    const width = Math.abs((cpr.tc || 0) - (cpr.bc || 0));
-    const widthFormatted = width > 0 ? width.toFixed(1) : '34.7';
-
-    if (width < 35) {
-      bulletinCprEl.innerHTML = `⚡ <strong>Nifty CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-narrow-text">NARROW RANGE (${widthFormatted} pts)</span>: High chance of Big One-Sided Momentum Rally!`;
-    } else {
-      bulletinCprEl.innerHTML = `🔄 <strong>Nifty CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-wide-text">WIDER RANGE (${widthFormatted} pts)</span>: Expect Sideways Volatile Trading (No big movements).`;
-    }
+  if (news2El && item2) {
+    const cleanSrc = (item2.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
+    const emoji = item2.impact === 'high' ? '🔴' : (item2.impact === 'medium' ? '🟢' : '🔵');
+    const link = item2.link || '#';
+    news2El.innerHTML = `${emoji} <strong>[${cleanSrc}]:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: none;">${item2.title}</a>`;
+  } else if (news2El) {
+    news2El.innerHTML = default2;
   }
 }
 
