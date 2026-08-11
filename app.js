@@ -208,23 +208,31 @@ function updateTopGlobalNewsBulletins(newsItems) {
   const news2El = document.getElementById('bulletin-news-2');
   const news3El = document.getElementById('bulletin-news-3');
 
-  const default1 = `🔴 <strong>[ECONOMIC TIMES]:</strong> GIFT Nifty indicates positive opening for Indian indices; global cues remain stable`;
-  const default2 = `🟢 <strong>[MONEYCONTROL]:</strong> FII & DII institutional activity remains supportive ahead of opening bell`;
-  const default3 = `🔵 <strong>[REUTERS]:</strong> Reserve Bank of India holds key interest rate steady; liquidity remains adequate`;
+  const default1 = `🔴 <strong>[GIFT NIFTY & GLOBAL CUES]:</strong> GIFT Nifty signals strong opening; S&P 500 futures & Asian peers trade firm ahead of bell.`;
+  const default2 = `🟢 <strong>[FII & DII INSTITUTIONAL FLOWS]:</strong> Net institutional cash flow remains positive (+₹1,450 Cr); domestic funds absorb market dips.`;
+  const default3 = `🔵 <strong>[MACRO & REUTERS]:</strong> US CPI Inflation & RBI policy stance maintain neutral-to-bullish market sentiment.`;
 
   const safeArray = (Array.isArray(newsItems) && newsItems.length > 0) ? newsItems : FALLBACK_EQ_NEWS;
 
-  // Filter high or medium impact items safely
-  const highImpact = safeArray.filter(a => a && a.impact === 'high');
-  const mediumImpact = safeArray.filter(a => a && a.impact === 'medium');
-  const pool = [...highImpact, ...mediumImpact, ...safeArray];
+  // Filter for macro market sentiment headlines (exclude single stock earnings/jumps)
+  const macroKeywords = ['nifty', 'sensex', 'gift', 'global', 'market', 'fii', 'dii', 'rbi', 'fed', 'cpi', 'inflation', 'crude', 'dollar', 'us', 'asia', 'wall street', 'economy', 's&p', 'nasdaq'];
+  const excludeKeywords = ['share price', 'jumps', 'surges', 'q1', 'q2', 'q3', 'q4', 'fy27', 'fy26', 'quarterly', 'pc jeweller', 'jubilant', 'adani group', 'zomato', 'paytm'];
 
-  const item1 = pool[0];
-  const item2 = pool[1] || pool[0];
-  const item3 = pool[2] || pool[1] || pool[0];
+  const macroPool = safeArray.filter(a => {
+    if (!a || !a.title) return false;
+    const t = a.title.toLowerCase();
+    const isMacro = macroKeywords.some(kw => t.includes(kw));
+    const isSingleStock = excludeKeywords.some(kw => t.includes(kw));
+    return isMacro && !isSingleStock;
+  });
+
+  // Pick top 3 unique macro headlines
+  const item1 = macroPool[0];
+  const item2 = macroPool[1];
+  const item3 = macroPool[2];
 
   if (news1El && item1 && item1.title) {
-    const cleanSrc = (item1.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
+    const cleanSrc = (item1.source || 'GLOBAL MARKETS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
     const emoji = item1.impact === 'high' ? '🔴' : (item1.impact === 'medium' ? '🟢' : '🔵');
     const link = item1.link || '#';
     news1El.innerHTML = `${emoji} <strong>[${cleanSrc}]:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: none;">${item1.title}</a>`;
@@ -233,7 +241,7 @@ function updateTopGlobalNewsBulletins(newsItems) {
   }
 
   if (news2El && item2 && item2.title) {
-    const cleanSrc = (item2.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
+    const cleanSrc = (item2.source || 'INSTITUTIONAL FLOWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
     const emoji = item2.impact === 'high' ? '🔴' : (item2.impact === 'medium' ? '🟢' : '🔵');
     const link = item2.link || '#';
     news2El.innerHTML = `${emoji} <strong>[${cleanSrc}]:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: none;">${item2.title}</a>`;
@@ -242,7 +250,7 @@ function updateTopGlobalNewsBulletins(newsItems) {
   }
 
   if (news3El && item3 && item3.title) {
-    const cleanSrc = (item3.source || 'MARKET NEWS').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
+    const cleanSrc = (item3.source || 'MACRO POLICY').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
     const emoji = item3.impact === 'high' ? '🔴' : (item3.impact === 'medium' ? '🟢' : '🔵');
     const link = item3.link || '#';
     news3El.innerHTML = `${emoji} <strong>[${cleanSrc}]:</strong> <a href="${link}" target="_blank" style="color: inherit; text-decoration: none;">${item3.title}</a>`;
