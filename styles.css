@@ -2977,3 +2977,67 @@ body.light-theme .empty-impact-msg {
 }
 .profit-text { color: #10b981 !important; }
 .sl-text { color: #f43f5e !important; font-size: 0.75rem; }
+
+.calc-res-box.full-width {
+  grid-column: 1 / -1;
+}
+
+.highlight-rr {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 0.85rem;
+}
+
+.rr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.rr-badge {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.rr-bar-bg {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 0.5rem;
+}
+
+.rr-bar-risk {
+  background: #f43f5e;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.rr-bar-reward {
+  background: #10b981;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.rr-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.rr-leg-risk {
+  color: #f43f5e;
+}
+
+.rr-leg-reward {
+  color: #10b981;
+}
