@@ -201,6 +201,21 @@ function updateSentimentGauge(data) {
   } catch (e) {
     console.error("Error updating top global news bulletins:", e);
   }
+
+  // Populate Line 4: Today's Market Directional Bias (BULLISH vs BEARISH)
+  const biasEl = document.getElementById('bulletin-bias');
+  if (biasEl) {
+    const niftyPivot = (data && data.nifty && data.nifty.cpr && data.nifty.cpr.p) ? data.nifty.cpr.p.toFixed(0) : '24,572';
+    const isBullish = score >= 0;
+    const sign = score >= 0 ? '+' : '';
+    const scoreStr = `${sign}${score.toFixed(0)}%`;
+
+    if (isBullish) {
+      biasEl.innerHTML = `🎯 <strong>TODAY'S MARKET DIRECTION BIAS:</strong> <span style="color: #4ade80; font-weight: 700;">BULLISH 🟢 (${scoreStr} Sentiment)</span> — Expect Upward Momentum Rally above Pivot (${niftyPivot})!`;
+    } else {
+      biasEl.innerHTML = `🎯 <strong>TODAY'S MARKET DIRECTION BIAS:</strong> <span style="color: #f87171; font-weight: 700;">BEARISH 🔴 (${scoreStr} Sentiment)</span> — Expect Downward Selling Pressure below Pivot (${niftyPivot})!`;
+    }
+  }
 }
 
 function updateTopGlobalNewsBulletins(newsItems) {
