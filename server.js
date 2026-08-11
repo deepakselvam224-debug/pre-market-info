@@ -2082,8 +2082,6 @@ function getForexFactoryCalendarData() {
       status: 'neutral'
     },
     {
-    },
-    {
       date: 'Tue Jul 28',
       time: '08:35 AM',
       currency: 'AUD',

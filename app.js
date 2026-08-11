@@ -1387,9 +1387,13 @@ function renderForexCalendarTable() {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  let list = RAW_FOREX_CALENDAR || [];
+  let list = (RAW_FOREX_CALENDAR || []).filter(item => item && item.event && item.date);
+  
+  const todayStr = getDynamicDateStr(0);
+  const tomorrowStr = getDynamicDateStr(1);
+
   if (currentForexTab === 'today') {
-    list = list.filter(item => item.date.includes('Wed Jul 29') || item.date.includes('Thu Jul 30'));
+    list = list.filter(item => item.date.includes(todayStr) || item.date.includes(tomorrowStr));
   } else if (currentForexTab === 'high') {
     list = list.filter(item => item.impact === 'high');
   }
@@ -1402,8 +1406,9 @@ function renderForexCalendarTable() {
   let lastDate = '';
 
   list.forEach(item => {
+    if (!item || !item.event) return;
     const tr = document.createElement('tr');
-    tr.className = `ff-row impact-${item.impact}`;
+    tr.className = `ff-row impact-${item.impact || 'low'}`;
 
     // Folder Icon & Color
     let folderIcon = '📁';
