@@ -234,13 +234,17 @@ function calculateScalpReturn() {
   const maxRisk = slConstant * qty;
   const riskPercent = capital > 0 ? (maxRisk / capital) * 100 : 0;
 
-  // 4. Spot Index R:R Ratio Calculation (Spot Target Pts / Constant Spot SL Pts)
-  const spotRrRatio = (spotTargetVal / slConstant).toFixed(1);
+  // 4. Option Premium R:R Ratio Calculation (Pure Points: Target Gain ₹ / Constant SL ₹)
+  const optRrRatio = (optTargetVal / slConstant).toFixed(1);
+  const totalOptBarVal = slConstant + optTargetVal;
+  const optRiskPct = Math.round((slConstant / totalOptBarVal) * 100);
+  const optRewardPct = 100 - optRiskPct;
 
-  // Visual Bar percentages (based on Spot Target vs Spot SL)
+  // 5. Spot Index R:R Ratio Calculation (Spot Target Pts / Constant Spot SL Pts)
+  const spotRrRatio = (spotTargetVal / slConstant).toFixed(1);
   const totalSpotBarVal = slConstant + spotTargetVal;
-  const riskBarPct = Math.round((slConstant / totalSpotBarVal) * 100);
-  const rewardBarPct = 100 - riskBarPct;
+  const spotRiskPct = Math.round((slConstant / totalSpotBarVal) * 100);
+  const spotRewardPct = 100 - spotRiskPct;
 
   const formatRs = (num) => '₹' + Math.round(num).toLocaleString('en-IN');
 
@@ -252,11 +256,19 @@ function calculateScalpReturn() {
   const slLabelEl = document.getElementById('sl-badge-label');
   const slEl = document.getElementById('res-sl-text');
 
-  const rrBadgeEl = document.getElementById('res-rr-badge');
-  const rrRiskBarEl = document.getElementById('rr-bar-risk');
-  const rrRewardBarEl = document.getElementById('rr-bar-reward');
-  const rrRiskLegEl = document.getElementById('rr-leg-risk-text');
-  const rrRewardLegEl = document.getElementById('rr-leg-reward-text');
+  // Option Premium R:R Elements
+  const optRrBadgeEl = document.getElementById('res-opt-rr-badge');
+  const optRrRiskBarEl = document.getElementById('opt-rr-bar-risk');
+  const optRrRewardBarEl = document.getElementById('opt-rr-bar-reward');
+  const optRrRiskLegEl = document.getElementById('opt-rr-leg-risk-text');
+  const optRrRewardLegEl = document.getElementById('opt-rr-leg-reward-text');
+
+  // Spot Index R:R Elements
+  const spotRrBadgeEl = document.getElementById('res-spot-rr-badge');
+  const spotRrRiskBarEl = document.getElementById('spot-rr-bar-risk');
+  const spotRrRewardBarEl = document.getElementById('spot-rr-bar-reward');
+  const spotRrRiskLegEl = document.getElementById('spot-rr-leg-risk-text');
+  const spotRrRewardLegEl = document.getElementById('spot-rr-leg-reward-text');
 
   if (capEl) capEl.textContent = formatRs(capital);
   if (premEl) premEl.textContent = `₹${targetPrice.toFixed(2)} (+${premiumGain.toFixed(1)} ₹)`;
@@ -279,11 +291,19 @@ function calculateScalpReturn() {
     slEl.textContent = `SL Price: ₹${slPrice.toFixed(2)} (-${slConstant.toFixed(1)} ₹) ➔ Max Risk: -${formatRs(maxRisk)} (-${riskPercent.toFixed(1)}%)`;
   }
 
-  if (rrBadgeEl) rrBadgeEl.textContent = `1 : ${spotRrRatio} R:R Ratio 🎯`;
-  if (rrRiskBarEl) rrRiskBarEl.style.width = `${riskBarPct}%`;
-  if (rrRewardBarEl) rrRewardBarEl.style.width = `${rewardBarPct}%`;
-  if (rrRiskLegEl) rrRiskLegEl.textContent = `Risk: ${slConstant} Pts (-${formatRs(maxRisk)})`;
-  if (rrRewardLegEl) rrRewardLegEl.textContent = `Reward: +${spotTargetVal} Pts (+${formatRs(grossProfit)} Option)`;
+  // Update Option Premium R:R (Pure points calculation)
+  if (optRrBadgeEl) optRrBadgeEl.textContent = `1 : ${optRrRatio} Option R:R 🎯`;
+  if (optRrRiskBarEl) optRrRiskBarEl.style.width = `${optRiskPct}%`;
+  if (optRrRewardBarEl) optRrRewardBarEl.style.width = `${optRewardPct}%`;
+  if (optRrRiskLegEl) optRrRiskLegEl.textContent = `Risk: ${slConstant} ₹ Drop`;
+  if (optRrRewardLegEl) optRrRewardLegEl.textContent = `Reward: +${optTargetVal} ₹ Premium Gain`;
+
+  // Update Spot Index R:R
+  if (spotRrBadgeEl) spotRrBadgeEl.textContent = `1 : ${spotRrRatio} Spot R:R 🎯`;
+  if (spotRrRiskBarEl) spotRrRiskBarEl.style.width = `${spotRiskPct}%`;
+  if (spotRrRewardBarEl) spotRrRewardBarEl.style.width = `${spotRewardPct}%`;
+  if (spotRrRiskLegEl) spotRrRiskLegEl.textContent = `Risk: ${slConstant} Pts Spot`;
+  if (spotRrRewardLegEl) spotRrRewardLegEl.textContent = `Reward: +${spotTargetVal} Pts Spot Target`;
 }
 
 /* --- OPTIONS CHAIN OI & MAX PAIN DESK POLLER --- */
