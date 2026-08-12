@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=101.0">
+  <link rel="stylesheet" href="styles.css?v=102.0">
   <!-- TradingView Widget Script Loader -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 </head>
@@ -263,7 +263,7 @@
             </span>
             <h3>Overnight Catalysts <span class="time-range">(3:30 PM - Today)</span></h3>
           </div>
-          <div class="feed-status" id="eq-feed-time">Syncing...</div>
+          <div class="feed-status" id="eq-feed-time">Live Feeds Sync</div>
         </div>
 
         <div class="news-tabs-container">
@@ -271,10 +271,7 @@
           <button class="news-tab" id="tab-eq-trading" onclick="switchEqNewsTab('trading')">Trading Hours (9:15 AM - 3:30 PM)</button>
         </div>
         <div class="catalyst-list" id="eq-news-list">
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Gathering Indian market news...</p>
-          </div>
+          <!-- Populated instantly by app.js -->
         </div>
       </div>
     </section>
@@ -398,14 +395,14 @@
             </span>
             <h3>Natural Gas & Crypto Catalysts</h3>
           </div>
-          <div class="feed-status" id="gas-feed-time">Syncing...</div>
+          <div class="feed-status" id="gas-feed-time">Live Feeds Sync</div>
         </div>
 
         <!-- Stats strip (US Weather Trend, EIA Storage Report) -->
         <div class="gas-catalyst-strip">
           <div class="stat-box">
             <span class="stat-lbl">US Weather Trend</span>
-            <span class="stat-val" id="weather-status-indicator">Loading...</span>
+            <span class="stat-val warm" id="weather-status-indicator">🔥 Warmer (Above Normal)</span>
           </div>
           <div class="stat-box">
             <span class="stat-lbl">EIA Storage Report</span>
@@ -418,10 +415,7 @@
           <button class="news-tab" id="tab-gas-trading" onclick="switchGasNewsTab('trading')">Trading Hours News</button>
         </div>
         <div class="catalyst-list" id="gas-news-list">
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Fetching gas inventory and weather reports...</p>
-          </div>
+          <!-- Populated instantly by app.js -->
         </div>
       </div>
     </section>
@@ -769,6 +763,6 @@
   </main>
 
   <!-- Application JS Code -->
-  <script src="app.js?v=101.0"></script>
+  <script src="app.js?v=102.0"></script>
 </body>
 </html>

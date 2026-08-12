@@ -1186,16 +1186,18 @@ async function refreshAllFeeds() {
   const refreshButton = document.querySelector('.refresh-all-btn');
   if (refreshButton) refreshButton.classList.add('spinning');
   
-  document.getElementById('eq-feed-time').textContent = "Updating...";
-  document.getElementById('gas-feed-time').textContent = "Updating...";
+  const eqTimeEl = document.getElementById('eq-feed-time');
+  const gasTimeEl = document.getElementById('gas-feed-time');
+  if (eqTimeEl) eqTimeEl.textContent = "Live Sync Active...";
+  if (gasTimeEl) gasTimeEl.textContent = "Live Sync Active...";
 
   try {
     const response = await fetch('/api/news');
     if (!response.ok) throw new Error("News API failed");
     const data = await response.json();
 
-    RAW_EQ_NEWS = data.equity || [];
-    RAW_GAS_NEWS = data.gas || [];
+    RAW_EQ_NEWS = (data.equity && data.equity.length > 0) ? data.equity : FALLBACK_EQ_NEWS;
+    RAW_GAS_NEWS = (data.gas && data.gas.length > 0) ? data.gas : FALLBACK_GAS_NEWS;
 
     renderNewsDesk();
     fetchFiiDiiData();
@@ -1209,19 +1211,22 @@ async function refreshAllFeeds() {
     if (refreshButton) refreshButton.classList.remove('spinning');
     
     const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('eq-feed-time').innerHTML = `Refreshed ${timeStr}`;
-    document.getElementById('gas-feed-time').innerHTML = `Refreshed ${timeStr}`;
+    if (eqTimeEl) eqTimeEl.innerHTML = `Refreshed ${timeStr} IST`;
+    if (gasTimeEl) gasTimeEl.innerHTML = `Refreshed ${timeStr} IST`;
   }
 }
 
 // Render filtered lists on the dashboard based on active tabs
 function renderNewsDesk() {
+  if (!RAW_EQ_NEWS || RAW_EQ_NEWS.length === 0) RAW_EQ_NEWS = FALLBACK_EQ_NEWS;
+  if (!RAW_GAS_NEWS || RAW_GAS_NEWS.length === 0) RAW_GAS_NEWS = FALLBACK_GAS_NEWS;
+
   const filteredEq = filterNewsByTab(RAW_EQ_NEWS, currentEqNewsTab);
   const filteredGas = filterNewsByTab(RAW_GAS_NEWS, currentGasNewsTab);
 
-  renderCatalystList('eq-news-list', filteredEq, 'equity');
-  renderCatalystList('gas-news-list', filteredGas, 'gas');
-  
+  renderCatalystList('eq-news-list', (filteredEq && filteredEq.length > 0) ? filteredEq : FALLBACK_EQ_NEWS, 'equity');
+  renderCatalystList('gas-news-list', (filteredGas && filteredGas.length > 0) ? filteredGas : FALLBACK_GAS_NEWS, 'gas');
+
   // Update indicators strip
   updateGasStatIndicators(RAW_GAS_NEWS);
 }
