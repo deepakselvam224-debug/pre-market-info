@@ -1247,9 +1247,6 @@ function fetchTradingViewNSE(ticker) {
   });
 }
 
-// Daily CPR Cache to ensure levels update at 09:15 AM IST and stay locked all day
-const dailyCprCache = {};
-
 // Official TradingView KGS Auto CPR Indicator Engine
 function calculateKgsAutoCPR(high, low, close) {
   if (!high || !low || !close || high <= 0 || low <= 0 || close <= 0) return null;
