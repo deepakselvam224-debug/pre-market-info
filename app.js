@@ -121,8 +121,8 @@ const FALLBACK_GAS_NEWS = getDynamicFallbackGasNews();
 // Initial Baseline Card Data (Guarantees 0ms loading lag on startup)
 function initializeBaselineCards() {
   const defaultData = {
-    nifty: { price: 24560.20, change: 110.00, changePercent: 0.45, high: 24590.90, low: 24549.75, prevClose: 24450.20, cpr: { p: 24571.95, tc: 24577.88, bc: 24566.03 }, strategy: { state: "NEUTRAL", currentVwap: 24571.95, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } },
-    banknifty: { price: 52480.00, change: -378.35, changePercent: -0.66, high: 52708.28, low: 52251.72, prevClose: 52858.35, cpr: { p: 52480.00, tc: 52508.28, bc: 52451.72 }, strategy: { state: "NEUTRAL", currentVwap: 52480.00, trends: { '5m': 'bear', '15m': 'bear', '1h': 'bear', '1d': 'bear' } } },
+    nifty: { price: 24275.90, change: -195.80, changePercent: -0.80, high: 24473.30, low: 24265.95, prevClose: 24471.70, cpr: { p: 24492.60, tc: 24503.05, bc: 24482.15 }, strategy: { state: "SHORT_TRIGGERED", currentVwap: 24348.16, trends: { '5m': 'bear', '15m': 'bear', '1h': 'bear', '1d': 'bear' } } },
+    banknifty: { price: 57483.55, change: 37.30, changePercent: 0.07, high: 57783.70, low: 57254.00, prevClose: 57446.25, cpr: { p: 57403.87, tc: 57425.06, bc: 57382.68 }, strategy: { state: "NEUTRAL", currentVwap: 57609.53, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } },
     gas: { price: 262.80, change: 0.10, changePercent: 0.04, high: 263.10, low: 262.40, prevClose: 262.70, cpr: { p: 262.8, tc: 263.15, bc: 262.45 }, strategy: { state: "NEUTRAL", currentVwap: 262.8, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } },
     eth: { price: 3450.20, change: 45.50, changePercent: 1.34, high: 3480.00, low: 3410.00, prevClose: 3404.70, cpr: { p: 3445.0, tc: 3455.0, bc: 3435.0 }, strategy: { state: "NEUTRAL", currentVwap: 3450.2, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } }
   };
@@ -775,22 +775,33 @@ function updateIndexCard(id, indexData) {
   const stratDetailsEl = document.getElementById(`${id}-strat-details`);
   const cprBannerEl = document.getElementById(`${id}-cpr-banner`);
 
-  if (cprBannerEl && indexData.cpr) {
-    cprBannerEl.style.display = "block";
-    const cpr = indexData.cpr;
-    const p = cpr.p ? cpr.p.toFixed(1) : '--';
-    const tc = cpr.tc ? cpr.tc.toFixed(1) : '--';
-    const bc = cpr.bc ? cpr.bc.toFixed(1) : '--';
-    const width = Math.abs((cpr.tc || 0) - (cpr.bc || 0));
-    const widthFormatted = width > 0 ? width.toFixed(1) : (id === 'nifty' ? '11.9' : '56.6');
+  if (cprBannerEl) {
+    let cpr = indexData.cpr;
+    if ((!cpr || !cpr.p) && indexData.high > 0 && indexData.low > 0 && indexData.prevClose > 0) {
+      const p = (indexData.high + indexData.low + indexData.prevClose) / 3;
+      const bc = (indexData.high + indexData.low) / 2;
+      const tc = (2 * p) - bc;
+      cpr = { p, tc, bc };
+    }
 
-    const assetTitle = (id === 'nifty' ? 'Nifty' : (id === 'banknifty' ? 'Bank Nifty' : 'MCX Gas'));
-    if (width < 35) {
-      cprBannerEl.innerHTML = `⚡ <strong>${assetTitle} CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-narrow-text">NARROW RANGE (${widthFormatted} pts)</span>: High chance of Big Momentum Rally!`;
-      cprBannerEl.className = "cpr-banner cpr-narrow";
-    } else {
-      cprBannerEl.innerHTML = `🔄 <strong>${assetTitle} CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-wide-text">WIDER RANGE (${widthFormatted} pts)</span>: Expect Sideways Volatile Trading.`;
-      cprBannerEl.className = "cpr-banner cpr-wider";
+    if (cpr && cpr.p) {
+      cprBannerEl.style.display = "block";
+      const p = cpr.p.toFixed(1);
+      const tc = cpr.tc.toFixed(1);
+      const bc = cpr.bc.toFixed(1);
+      const width = Math.abs(cpr.tc - cpr.bc);
+      const widthFormatted = width.toFixed(1);
+
+      const assetTitle = (id === 'nifty' ? 'Nifty' : (id === 'banknifty' ? 'Bank Nifty' : 'MCX Gas'));
+      const threshold = id === 'banknifty' ? 50 : 25;
+
+      if (width < threshold) {
+        cprBannerEl.innerHTML = `⚡ <strong>${assetTitle} CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-narrow-text">NARROW RANGE (${widthFormatted} pts)</span>: High chance of Big Momentum Rally!`;
+        cprBannerEl.className = "cpr-banner cpr-narrow";
+      } else {
+        cprBannerEl.innerHTML = `🔄 <strong>${assetTitle} CPR:</strong> P ${p} | TC ${tc} | BC ${bc} ➔ <span class="cpr-wide-text">WIDER RANGE (${widthFormatted} pts)</span>: Expect Sideways Volatile Trading.`;
+        cprBannerEl.className = "cpr-banner cpr-wider";
+      }
     }
   }
 
