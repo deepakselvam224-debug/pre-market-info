@@ -1258,7 +1258,7 @@ function renderNewsDesk() {
   updateGasStatIndicators(gasSource);
 }
 
-// Dynamic tab boundary partition & Chronological Sort
+// Dynamic tab boundary partition & Chronological Sort with Strict Tab Segregation
 function filterNewsByTab(articles, tab) {
   if (!articles || articles.length === 0) return [];
 
@@ -1269,20 +1269,34 @@ function filterNewsByTab(articles, tab) {
     return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
   });
 
-  const now = new Date();
-  const todayOpen = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 15, 0).getTime();
-  const todayClose = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 30, 0).getTime();
-
   if (tab === 'trading') {
-    // Filter articles from trading window
-    const tradingNews = sorted.filter(article => {
-      const t = parseFeedDate(article.pubDate).getTime();
-      return !isNaN(t) && t >= (todayOpen - 18 * 3600 * 1000) && t <= (todayClose + 4 * 3600 * 1000);
+    // Trading Hours (9:15 AM - 3:30 PM IST): filter articles published during daytime market hours (09:15 to 16:00)
+    const tradingArticles = sorted.filter(article => {
+      const d = parseFeedDate(article.pubDate);
+      const hours = d.getHours();
+      return hours >= 9 && hours < 16;
     });
-    return tradingNews.length > 0 ? tradingNews : sorted.slice(0, 10);
+    
+    if (tradingArticles.length >= 3) {
+      return tradingArticles;
+    }
+    // Partition odd indices so Trading tab displays distinct articles from Overnight
+    const oddPartition = sorted.filter((_, idx) => idx % 2 === 0);
+    return oddPartition.length > 0 ? oddPartition : sorted.slice(0, 5);
   } else {
-    // Overnight: return top 10 most recent live articles
-    return sorted.slice(0, 10);
+    // Overnight (3:30 PM - 9:00 AM IST): filter articles published during evening, night, and early morning (16:00 to 09:00)
+    const overnightArticles = sorted.filter(article => {
+      const d = parseFeedDate(article.pubDate);
+      const hours = d.getHours();
+      return hours >= 16 || hours < 9;
+    });
+
+    if (overnightArticles.length >= 3) {
+      return overnightArticles;
+    }
+    // Partition even indices so Overnight tab displays distinct articles from Trading
+    const evenPartition = sorted.filter((_, idx) => idx % 2 !== 0);
+    return evenPartition.length > 0 ? evenPartition : sorted.slice(5, 10);
   }
 }
 
@@ -1468,18 +1482,23 @@ function formatRelativeTime(dateStr) {
   const now = new Date();
   const diffMs = now - date;
   
+  const timeIST = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const isToday = date.toDateString() === now.toDateString();
+  const datePrefix = isToday ? 'Today' : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
   if (isNaN(diffMs) || diffMs < 0) {
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return `${datePrefix} ${timeIST} IST`;
   }
 
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMins / 60);
 
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  
-  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) + ' ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  let agoText = 'Just now';
+  if (diffMins >= 1 && diffMins < 60) agoText = `${diffMins}m ago`;
+  else if (diffHours >= 1 && diffHours < 24) agoText = `${diffHours}h ago`;
+  else agoText = `${Math.floor(diffHours / 24)}d ago`;
+
+  return `${datePrefix} ${timeIST} IST (${agoText})`;
 }
 
 // Update indicators inside the original stat-box layout
