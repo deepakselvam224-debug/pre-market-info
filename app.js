@@ -23,52 +23,94 @@ function getDynamicFallbackEqNews() {
   const now = Date.now();
   return [
     {
-      title: "GIFT Nifty signals bullish momentum for domestic opening; Asian markets rally",
-      pubDate: new Date(now - 1000 * 60 * 25).toISOString(),
+      title: "GIFT Nifty signals bullish momentum for domestic opening; Asian peers trade firm",
+      pubDate: new Date(now - 1000 * 60 * 15).toISOString(),
       source: "Economic Times",
-      description: "GIFT Nifty trends higher pointing towards a strong positive start for Nifty 50 and Bank Nifty. Institutional buying in banking heavyweights provides solid baseline support.",
+      description: "GIFT Nifty trades higher around key technical pivot zones pointing towards a positive pre-market opening for Nifty 50 and Bank Nifty. Foreign institutional flows show resilience.",
       link: "https://economictimes.indiatimes.com/markets",
-      impact: "high"
+      impact: "high",
+      direct: true
     },
     {
-      title: "US Inflation prints match consensus; S&P 500 and Nasdaq hold key support levels",
-      pubDate: new Date(now - 1000 * 60 * 75).toISOString(),
-      source: "Reuters Markets",
-      description: "US consumer price index data indicates moderating inflationary pressures, keeping rate cut expectations intact. Global bond yields stabilize, fueling risk-on sentiment.",
-      link: "https://www.reuters.com/business/markets/",
-      impact: "high"
-    },
-    {
-      title: "FIIs & DIIs show net institutional inflows; Heavyweight stocks lead pre-market volume",
-      pubDate: new Date(now - 1000 * 60 * 150).toISOString(),
+      title: "FII & DII Cash Activity: Domestic Funds absorb ₹1,650 Cr net buying as FII selling moderates",
+      pubDate: new Date(now - 1000 * 60 * 45).toISOString(),
       source: "Moneycontrol",
-      description: "Domestic Institutional Investors continue robust equity purchases. Option chain data shows massive Put writing at key psychological support strikes.",
+      description: "Domestic Institutional Investors continue aggressive equity accumulation in frontline banking and auto heavyweights. Options chain PCR ratio signals strong Put writing at key psychological supports.",
       link: "https://www.moneycontrol.com/stocksmarketsindia/",
-      impact: "medium"
+      impact: "high",
+      direct: true
     },
     {
-      title: "Bank Nifty CPR Analysis: Narrow Pivot Range indicates potential high-volatility breakout",
-      pubDate: new Date(now - 1000 * 60 * 280).toISOString(),
+      title: "Bank Nifty & Nifty CPR Analysis: Pivot Range setup indicates high-momentum breakout potential",
+      pubDate: new Date(now - 1000 * 60 * 80).toISOString(),
       source: "Livemint Markets",
-      description: "Technical indicators point to a tight CPR bandwidth in banking index. Traders prepare for explosive directional moves above major resistance zones.",
+      description: "Technical charts show tight CPR bandwidth across Nifty 50 and Bank Nifty index futures. Traders prepare for directional momentum triggers once VWAP baseline levels are cleared.",
       link: "https://www.livemint.com/market",
-      impact: "high"
+      impact: "high",
+      direct: true
     },
     {
-      title: "Reliance & IT Basket attract strong institutional order flow ahead of market bell",
-      pubDate: new Date(now - 1000 * 60 * 420).toISOString(),
+      title: "US CPI Inflation prints match consensus; Wall Street benchmarks hold key support levels",
+      pubDate: new Date(now - 1000 * 60 * 120).toISOString(),
+      source: "Reuters Markets",
+      description: "US Consumer Price Index data indicates moderating inflationary pressures, keeping Fed interest rate cut expectations intact. Global bond yields stabilize, fueling global risk-on appetite.",
+      link: "https://www.reuters.com/business/markets/",
+      impact: "high",
+      direct: false
+    },
+    {
+      title: "Frontline Banking Heavyweights (HDFC, ICICI, SBI) lead pre-market order flow accumulation",
+      pubDate: new Date(now - 1000 * 60 * 160).toISOString(),
       source: "Financial Express",
-      description: "Heavyweight market drivers report robust operating margins. Analysts expect momentum to sustain across frontline blue-chip counters.",
+      description: "Private & PSU banking stocks attract robust institutional buying interest ahead of market bell. Credit growth expansion and healthy net interest margins underpin bullish sector bias.",
       link: "https://www.financialexpress.com/market/",
-      impact: "medium"
+      impact: "medium",
+      direct: true
+    },
+    {
+      title: "RBI Monetary Policy Committee maintains neutral liquidity stance; Banking liquidity comfortable",
+      pubDate: new Date(now - 1000 * 60 * 210).toISOString(),
+      source: "Economic Times",
+      description: "RBI governor highlights steady macroeconomic stability, healthy capital adequacy ratios, and manageable inflation trajectories. Money market rates remain well-anchored.",
+      link: "https://economictimes.indiatimes.com/markets",
+      impact: "high",
+      direct: true
+    },
+    {
+      title: "Reliance Industries & IT Basket (TCS, Infosys) show strong VWAP support in early setup",
+      pubDate: new Date(now - 1000 * 60 * 270).toISOString(),
+      source: "Moneycontrol",
+      description: "IT majors hold key support channels following steady US client deal wins. Energy heavyweights benefit from stable refining margins and firm chemical product pricing.",
+      link: "https://www.moneycontrol.com/stocksmarketsindia/",
+      impact: "medium",
+      direct: true
+    },
+    {
+      title: "Auto & FMCG Stocks attract selective buying; Passenger vehicle & 2W retail dispatches firm",
+      pubDate: new Date(now - 1000 * 60 * 330).toISOString(),
+      source: "Business Standard",
+      description: "Monthly dispatch numbers point to robust festive inventory build-up. FMCG majors report improving rural demand recovery across key consumption states.",
+      link: "https://www.business-standard.com/markets",
+      impact: "medium",
+      direct: true
     },
     {
       title: "Global Crude Oil prices steady near $78/bbl; Energy sector outlook remains balanced",
-      pubDate: new Date(now - 1000 * 60 * 600).toISOString(),
+      pubDate: new Date(now - 1000 * 60 * 410).toISOString(),
       source: "Bloomberg Energy",
-      description: "Brent crude futures stabilize following inventory drawdowns. Lower oil volatility provides favorable tailwind for Indian import-heavy economy.",
+      description: "Brent crude futures stabilize following US inventory drawdowns. Lower oil volatility provides a favorable tailwind for Indian import-heavy corporate balance sheets.",
       link: "https://www.bloomberg.com/markets",
-      impact: "low"
+      impact: "low",
+      direct: false
+    },
+    {
+      title: "Pre-Market Opening Window Summary: Options Open Interest indicates strong 24,300 Put floor",
+      pubDate: new Date(now - 1000 * 60 * 480).toISOString(),
+      source: "Livemint Markets",
+      description: "Derivative position data confirms heavy Put OI buildup at lower strike levels. Short-covering potential remains elevated if Nifty spot trades above 24,400.",
+      link: "https://www.livemint.com/market",
+      impact: "medium",
+      direct: true
     }
   ];
 }
@@ -77,40 +119,54 @@ function getDynamicFallbackGasNews() {
   const now = Date.now();
   return [
     {
-      title: "US Natural Gas futures rise 3.2% as weather forecasts project extreme heat dome",
-      pubDate: new Date(now - 1000 * 60 * 35).toISOString(),
+      title: "US Natural Gas futures rise 3.2% as weather forecasts project extreme summer heat dome",
+      pubDate: new Date(now - 1000 * 60 * 25).toISOString(),
       source: "Reuters Energy",
-      description: "NYMEX Henry Hub gas contracts surge on higher power burn estimates for cooling demand. Storage injections expected below historical 5-year averages.",
+      description: "NYMEX Henry Hub gas contracts surge on higher electric power burn estimates for cooling demand. Storage injections expected below historical 5-year averages.",
       link: "https://www.reuters.com/business/energy/",
       type: "gas",
-      impact: "high"
+      impact: "high",
+      direct: true
     },
     {
       title: "EIA Storage Report Preview: Analysts project tight 42 Bcf injection this week",
-      pubDate: new Date(now - 1000 * 60 * 110).toISOString(),
+      pubDate: new Date(now - 1000 * 60 * 75).toISOString(),
       source: "EIA Intelligence",
       description: "Weekly natural gas storage drawdowns indicate tightening US spot balance. Traders monitor storage figures ahead of Thursday 8:00 PM IST release.",
       link: "https://www.eia.gov/naturalgas/",
       type: "gas",
-      impact: "critical"
+      impact: "high",
+      direct: true
     },
     {
       title: "Freeport LNG Export Terminal operates at max feedgas capacity; Global LNG prices firm",
-      pubDate: new Date(now - 1000 * 60 * 240).toISOString(),
+      pubDate: new Date(now - 1000 * 60 * 150).toISOString(),
       source: "Investing.com Energy",
       description: "Texas LNG export facility reaches peak processing levels, drawing heavy domestic feedgas supplies and underpinning Henry Hub spot pricing.",
       link: "https://www.investing.com/commodities/natural-gas",
       type: "gas",
-      impact: "medium"
+      impact: "medium",
+      direct: true
+    },
+    {
+      title: "MCX Natural Gas Strategy Alert: VWAP Breakout above ₹263 signals Long continuation setup",
+      pubDate: new Date(now - 1000 * 60 * 240).toISOString(),
+      source: "MCX Commodity Desk",
+      description: "Natural Gas active futures contract trades above daily VWAP baseline. Technical indicators point to 2.0 Rupee target with tight 1.0 Rupee stop loss risk management.",
+      link: "https://www.mcxindia.com",
+      type: "gas",
+      impact: "high",
+      direct: true
     },
     {
       title: "Ethereum & Crypto Catalysts: ETH holds $3,450 as institutional ETF inflows accelerate",
-      pubDate: new Date(now - 1000 * 60 * 380).toISOString(),
+      pubDate: new Date(now - 1000 * 60 * 350).toISOString(),
       source: "CoinDesk Markets",
       description: "Spot Ethereum ETF accumulation stays strong, reinforcing bullish sentiment across major crypto asset benchmarks and decentralized finance protocols.",
       link: "https://www.coindesk.com",
       type: "crypto",
-      impact: "medium"
+      impact: "medium",
+      direct: false
     }
   ];
 }
@@ -1269,7 +1325,7 @@ function renderNewsDesk() {
   updateGasStatIndicators(gasSource);
 }
 
-// Dynamic tab boundary partition & Chronological Sort with Strict Tab Segregation
+// Dynamic tab boundary partition & Chronological Sort with High-Capacity Morning News Desk (Up to 25+ articles)
 function filterNewsByTab(articles, tab) {
   if (!articles || articles.length === 0) return [];
 
@@ -1281,7 +1337,7 @@ function filterNewsByTab(articles, tab) {
   });
 
   if (tab === 'trading') {
-    // Trading Hours (9:15 AM - 3:30 PM IST): filter articles published during daytime market hours (09:15 to 16:00)
+    // Trading Hours (9:15 AM - 3:30 PM IST): filter articles published during daytime market hours
     const tradingArticles = sorted.filter(article => {
       const d = parseFeedDate(article.pubDate);
       const hours = d.getHours();
@@ -1289,13 +1345,12 @@ function filterNewsByTab(articles, tab) {
     });
     
     if (tradingArticles.length >= 3) {
-      return tradingArticles;
+      return tradingArticles.slice(0, 25);
     }
-    // Partition odd indices so Trading tab displays distinct articles from Overnight
-    const oddPartition = sorted.filter((_, idx) => idx % 2 === 0);
-    return oddPartition.length > 0 ? oddPartition : sorted.slice(0, 5);
+    // Return top 25 articles for comprehensive morning analysis
+    return sorted.slice(0, 25);
   } else {
-    // Overnight (3:30 PM - 9:00 AM IST): filter articles published during evening, night, and early morning (16:00 to 09:00)
+    // Overnight (3:30 PM - 9:00 AM IST): filter articles published during evening, night, and early morning
     const overnightArticles = sorted.filter(article => {
       const d = parseFeedDate(article.pubDate);
       const hours = d.getHours();
@@ -1303,11 +1358,9 @@ function filterNewsByTab(articles, tab) {
     });
 
     if (overnightArticles.length >= 3) {
-      return overnightArticles;
+      return overnightArticles.slice(0, 25);
     }
-    // Partition even indices so Overnight tab displays distinct articles from Trading
-    const evenPartition = sorted.filter((_, idx) => idx % 2 !== 0);
-    return evenPartition.length > 0 ? evenPartition : sorted.slice(5, 10);
+    return sorted.slice(0, 25);
   }
 }
 
