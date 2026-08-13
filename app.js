@@ -1323,6 +1323,42 @@ function renderNewsDesk() {
 
   // Update indicators strip
   updateGasStatIndicators(gasSource);
+
+  // Update Top High-Impact Volatility Warning Banner dynamically
+  updateVolatilityAlertBanner(eqSource);
+}
+
+// Dynamic Real-Time Volatility Alert Banner Engine
+function updateVolatilityAlertBanner(newsItems) {
+  const bannerEl = document.getElementById('volatility-warning-banner');
+  if (!bannerEl) return;
+
+  const safeNews = (Array.isArray(newsItems) && newsItems.length > 0) ? newsItems : FALLBACK_EQ_NEWS;
+  
+  // Find the single newest HIGH IMPACT article
+  const highImpactItem = safeNews.find(item => item && item.impact === 'high' && item.title);
+
+  if (highImpactItem) {
+    const cleanSrc = (highImpactItem.source || 'MARKET ALERT').replace(/\s*\([^)]*demo[^)]*\)/gi, '').trim().toUpperCase();
+    const link = highImpactItem.link || '#';
+    bannerEl.innerHTML = `
+      <span class="warning-icon">⚡</span>
+      <span class="warning-text">
+        <strong>HIGH-IMPACT VOLATILITY ALERT [${cleanSrc}]:</strong> 
+        <a href="${link}" target="_blank" style="color: inherit; text-decoration: underline;">${highImpactItem.title}</a> 
+        — Expect sharp momentum spikes & volatility near key CPR levels!
+      </span>
+    `;
+    bannerEl.style.cursor = 'pointer';
+    bannerEl.onclick = () => { if (highImpactItem.link) window.open(highImpactItem.link, '_blank'); };
+  } else {
+    bannerEl.innerHTML = `
+      <span class="warning-icon">⚡</span>
+      <span class="warning-text"><strong>HIGH-IMPACT VOLATILITY ALERT:</strong> Active Pre-Market Session — Monitor VWAP Breakouts & Key CPR Levels for High-Probability Scalp Triggers!</span>
+    `;
+    bannerEl.onclick = null;
+    bannerEl.style.cursor = 'default';
+  }
 }
 
 // Dynamic tab boundary partition & Chronological Sort with High-Capacity Morning News Desk (Up to 25+ articles)
