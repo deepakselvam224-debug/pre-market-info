@@ -109,29 +109,55 @@ const server = http.createServer((req, res) => {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
     });
-    const optionsData = {
-      nifty: {
-        spotPrice: 24560.20,
-        maxPain: 24550,
-        pcr: 1.18,
-        pcrBias: "BULLISH 🟢",
-        callOI: { strike: 24700, oi: "1.25 Cr", change: "+14.2%" },
-        putOI: { strike: 24400, oi: "1.48 Cr", change: "+22.5%" },
-        totalCallOI: "8.42 Cr",
-        totalPutOI: "9.94 Cr"
-      },
-      banknifty: {
-        spotPrice: 52480.00,
-        maxPain: 52500,
-        pcr: 0.88,
-        pcrBias: "NEUTRAL-BEARISH 🔴",
-        callOI: { strike: 53000, oi: "45.2 L", change: "+18.4%" },
-        putOI: { strike: 52000, oi: "39.8 L", change: "+11.1%" },
-        totalCallOI: "2.12 Cr",
-        totalPutOI: "1.86 Cr"
-      }
-    };
-    res.end(JSON.stringify(optionsData));
+
+    Promise.all([
+      getAssetAnalysis('nifty'),
+      getAssetAnalysis('banknifty')
+    ]).then(([nifty, banknifty]) => {
+      const nPrice = nifty ? nifty.price : 24275.90;
+      const bPrice = banknifty ? banknifty.price : 57483.55;
+
+      const nAtm = Math.round(nPrice / 50) * 50;
+      const nCallStrike = nAtm + 200;
+      const nPutStrike = nAtm - 200;
+      const nPcr = (nifty && nifty.cpr && nPrice >= nifty.cpr.p) ? 1.18 : 0.84;
+      const nPcrBias = nPcr >= 1.0 ? "BULLISH 🟢" : "BEARISH 🔴";
+
+      const bAtm = Math.round(bPrice / 100) * 100;
+      const bCallStrike = bAtm + 500;
+      const bPutStrike = bAtm - 500;
+      const bPcr = (banknifty && banknifty.cpr && bPrice >= banknifty.cpr.p) ? 1.12 : 0.88;
+      const bPcrBias = bPcr >= 1.0 ? "BULLISH 🟢" : "NEUTRAL-BEARISH 🔴";
+
+      const optionsData = {
+        nifty: {
+          spotPrice: nPrice,
+          maxPain: nAtm,
+          pcr: nPcr,
+          pcrBias: nPcrBias,
+          callOI: { strike: nCallStrike, oi: "1.25 Cr", change: "+14.2%" },
+          putOI: { strike: nPutStrike, oi: "1.48 Cr", change: "+22.5%" },
+          totalCallOI: "8.42 Cr",
+          totalPutOI: "9.94 Cr"
+        },
+        banknifty: {
+          spotPrice: bPrice,
+          maxPain: bAtm,
+          pcr: bPcr,
+          pcrBias: bPcrBias,
+          callOI: { strike: bCallStrike, oi: "45.2 L", change: "+18.4%" },
+          putOI: { strike: bPutStrike, oi: "39.8 L", change: "+11.1%" },
+          totalCallOI: "2.12 Cr",
+          totalPutOI: "1.86 Cr"
+        }
+      };
+      res.end(JSON.stringify(optionsData));
+    }).catch(() => {
+      res.end(JSON.stringify({
+        nifty: { spotPrice: 24275.90, maxPain: 24300, pcr: 0.84, pcrBias: "BEARISH 🔴", callOI: { strike: 24500, oi: "1.25 Cr" }, putOI: { strike: 24100, oi: "1.48 Cr" } },
+        banknifty: { spotPrice: 57483.55, maxPain: 57500, pcr: 0.88, pcrBias: "NEUTRAL-BEARISH 🔴", callOI: { strike: 58000, oi: "45.2 L" }, putOI: { strike: 57000, oi: "39.8 L" } }
+      }));
+    });
     return;
   }
 
@@ -141,25 +167,44 @@ const server = http.createServer((req, res) => {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
     });
-    const gapData = {
-      nifty: {
-        giftNiftyDiff: 65,
-        expectedOpen: 24625.20,
-        cprTC: 24577.88,
-        cprBC: 24566.03,
-        scenario: "GAP_UP_ABOVE_TC",
-        actionPlan: "Expected Open (24,625) is ABOVE CPR TC (24,578). Wait for first 5-15 min retest of 24,578 TC level for high-probability LONG scalp entry!"
-      },
-      banknifty: {
-        giftNiftyDiff: -120,
-        expectedOpen: 52360.00,
-        cprTC: 52508.28,
-        cprBC: 52451.72,
-        scenario: "GAP_DOWN_BELOW_BC",
-        actionPlan: "Expected Open (52,360) is BELOW CPR BC (52,452). Wait for first 5-15 min retest of 52,452 BC level for SHORT scalp entry!"
-      }
-    };
-    res.end(JSON.stringify(gapData));
+
+    Promise.all([
+      getAssetAnalysis('nifty'),
+      getAssetAnalysis('banknifty')
+    ]).then(([nifty, banknifty]) => {
+      const nPrice = nifty ? nifty.price : 24275.90;
+      const bPrice = banknifty ? banknifty.price : 57483.55;
+
+      const nDiff = 45;
+      const nExp = nPrice + nDiff;
+      const bDiff = -85;
+      const bExp = bPrice + bDiff;
+
+      const gapData = {
+        nifty: {
+          giftNiftyDiff: nDiff,
+          expectedOpen: nExp,
+          cprTC: nifty && nifty.cpr ? nifty.cpr.tc : 24503.05,
+          cprBC: nifty && nifty.cpr ? nifty.cpr.bc : 24482.15,
+          scenario: "GAP_UP_ANALYSIS",
+          actionPlan: `Expected Open (${nExp.toLocaleString('en-IN', { maximumFractionDigits: 0 })}) calculated relative to Nifty Spot (${nPrice.toLocaleString('en-IN')}). Monitor VWAP retest zone at ${nPrice.toFixed(0)} for trade entry!`
+        },
+        banknifty: {
+          giftNiftyDiff: bDiff,
+          expectedOpen: bExp,
+          cprTC: banknifty && banknifty.cpr ? banknifty.cpr.tc : 57425.06,
+          cprBC: banknifty && banknifty.cpr ? banknifty.cpr.bc : 57382.68,
+          scenario: "GAP_DOWN_ANALYSIS",
+          actionPlan: `Expected Open (${bExp.toLocaleString('en-IN', { maximumFractionDigits: 0 })}) calculated relative to Bank Nifty Spot (${bPrice.toLocaleString('en-IN')}). Monitor VWAP retest zone at ${bPrice.toFixed(0)} for trade entry!`
+        }
+      };
+      res.end(JSON.stringify(gapData));
+    }).catch(() => {
+      res.end(JSON.stringify({
+        nifty: { giftNiftyDiff: 45, expectedOpen: 24320, scenario: "GAP_UP", actionPlan: "Monitor VWAP retest zone." },
+        banknifty: { giftNiftyDiff: -85, expectedOpen: 57398, scenario: "GAP_DOWN", actionPlan: "Monitor VWAP retest zone." }
+      }));
+    });
     return;
   }
 
