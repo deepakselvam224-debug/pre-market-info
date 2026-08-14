@@ -32,7 +32,7 @@ function getDynamicFallbackEqNews() {
       direct: true
     },
     {
-      title: "FII & DII Cash Activity: Domestic Funds absorb ₹1,650 Cr net buying as FII selling moderates",
+      title: "FII & DII Cash Activity: Domestic Funds absorb net buying as FII selling moderates",
       pubDate: new Date(now - 1000 * 60 * 45).toISOString(),
       source: "Moneycontrol",
       description: "Domestic Institutional Investors continue aggressive equity accumulation in frontline banking and auto heavyweights. Options chain PCR ratio signals strong Put writing at key psychological supports.",
@@ -104,10 +104,10 @@ function getDynamicFallbackEqNews() {
       direct: false
     },
     {
-      title: "Pre-Market Opening Window Summary: Options Open Interest indicates strong 24,300 Put floor",
+      title: "Pre-Market Opening Window Summary: Options Open Interest indicates strong Put floor",
       pubDate: new Date(now - 1000 * 60 * 480).toISOString(),
       source: "Livemint Markets",
-      description: "Derivative position data confirms heavy Put OI buildup at lower strike levels. Short-covering potential remains elevated if Nifty spot trades above 24,400.",
+      description: "Derivative position data confirms heavy Put OI buildup at lower strike levels. Short-covering potential remains elevated if Nifty spot trades above resistance.",
       link: "https://www.livemint.com/market",
       impact: "medium",
       direct: true
@@ -177,10 +177,10 @@ const FALLBACK_GAS_NEWS = getDynamicFallbackGasNews();
 // Initial Baseline Card Data (Guarantees 0ms loading lag on startup)
 function initializeBaselineCards() {
   const defaultData = {
-    nifty: { price: 24275.90, change: -195.80, changePercent: -0.80, high: 24473.30, low: 24265.95, prevClose: 24471.70, cpr: { p: 24492.60, tc: 24503.05, bc: 24482.15 }, strategy: { state: "SHORT_TRIGGERED", currentVwap: 24348.16, trends: { '5m': 'bear', '15m': 'bear', '1h': 'bear', '1d': 'bear' } } },
-    banknifty: { price: 57483.55, change: 37.30, changePercent: 0.07, high: 57783.70, low: 57254.00, prevClose: 57446.25, cpr: { p: 57403.87, tc: 57425.06, bc: 57382.68 }, strategy: { state: "NEUTRAL", currentVwap: 57609.53, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } },
-    gas: { price: 262.80, change: 0.10, changePercent: 0.04, high: 263.10, low: 262.40, prevClose: 262.70, cpr: { p: 262.8, tc: 263.15, bc: 262.45 }, strategy: { state: "NEUTRAL", currentVwap: 262.8, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } },
-    eth: { price: 3450.20, change: 45.50, changePercent: 1.34, high: 3480.00, low: 3410.00, prevClose: 3404.70, cpr: { p: 3445.0, tc: 3455.0, bc: 3435.0 }, strategy: { state: "NEUTRAL", currentVwap: 3450.2, trends: { '5m': 'bull', '15m': 'bull', '1h': 'bull', '1d': 'bull' } } }
+    nifty: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, prevClose: 0, cpr: null, strategy: { state: "NEUTRAL" } },
+    banknifty: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, prevClose: 0, cpr: null, strategy: { state: "NEUTRAL" } },
+    gas: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, prevClose: 0, cpr: null, strategy: { state: "NEUTRAL" } },
+    eth: { price: 0, change: 0, changePercent: 0, high: 0, low: 0, prevClose: 0, cpr: null, strategy: { state: "NEUTRAL" } }
   };
   try {
     updateIndexCard('nifty', defaultData.nifty);
@@ -199,10 +199,10 @@ function initializeBaselineCards() {
     const diiValEl = document.getElementById('dii-net-val');
     const totalValEl = document.getElementById('fii-dii-total-val');
 
-    if (dateEl) dateEl.textContent = "Previous Session Close";
-    if (fiiValEl) { fiiValEl.textContent = "-1,240.00 Cr"; fiiValEl.className = "inst-val flow-red"; }
-    if (diiValEl) { diiValEl.textContent = "+1,650.00 Cr"; diiValEl.className = "inst-val flow-green"; }
-    if (totalValEl) { totalValEl.textContent = "+410.00 Cr"; totalValEl.className = "total-val flow-green"; }
+    if (dateEl) dateEl.textContent = "Loading...";
+    if (fiiValEl) { fiiValEl.textContent = "Loading..."; fiiValEl.className = "inst-val"; }
+    if (diiValEl) { diiValEl.textContent = "Loading..."; diiValEl.className = "inst-val"; }
+    if (totalValEl) { totalValEl.textContent = "Loading..."; totalValEl.className = "total-val"; }
 
     // 0ms Weather Trend & EIA Baseline
     const weatherIndicator = document.getElementById('weather-status-indicator');

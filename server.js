@@ -30,6 +30,8 @@ process.on('unhandledRejection', (reason, promise) => {
 // Global Memory Cache for Live Market Quotes (Guarantees zero UI freezing / zero "Loading..." loops)
 let lastQuotesCache = null;
 let dailyCprCache = {};
+let cachedFiiDiiData = null;
+let lastFiiDiiFetchTime = 0;
 
 const server = http.createServer((req, res) => {
   const urlPath = req.url.split('?')[0];
@@ -219,8 +221,8 @@ const server = http.createServer((req, res) => {
       getAssetAnalysis('nifty').catch(err => { console.error('Nifty error:', err.message); return null; }),
       getAssetAnalysis('banknifty').catch(err => { console.error('Bank Nifty error:', err.message); return null; }),
       getAssetAnalysis('gas').catch(err => { console.error('Gas error:', err.message); return null; }),
-      Promise.resolve({ price: 83.5, change: 0, changePercent: 0 }),
-      Promise.resolve({ price: 5450.5, change: 30.2, changePercent: 0.55 }),
+      fetchTradingViewNSE('FX_IDC:USDINR').catch(err => { console.error('USDINR error:', err.message); return { price: 83.5, change: 0, changePercent: 0 }; }),
+      fetchTradingViewNSE('SP:SPX').catch(err => { console.error('SPX error:', err.message); return { price: 5450.5, change: 30.2, changePercent: 0.55 }; }),
       getAssetAnalysis('eth').catch(err => { console.error('ETH error:', err.message); return null; })
     ]).then(results => {
       let [nifty, banknifty, gas, usdinr, spx, eth] = results;
@@ -1352,7 +1354,7 @@ function getAssetAnalysis(symbol) {
     tvPromise = fetchTradingViewNSE('NSE:NIFTY');
     assetId = 'nifty';
   } else if (symbol === 'eth' || symbol === 'ETH-USD') {
-    tvPromise = fetchTradingViewCrypto('CRYPTO:ETHUSD');
+    tvPromise = fetchTradingViewNSE('BINANCE:ETHUSDT');
     assetId = 'eth';
   } else {
     return Promise.resolve(null);
@@ -1377,11 +1379,13 @@ function getAssetAnalysis(symbol) {
       // Calculate from previous completed daily candle if available
       if (prevHigh > 0 && prevLow > 0 && prevClose > 0) {
         cpr = calculateKgsAutoCPR(prevHigh, prevLow, prevClose);
+        if (cpr) {
+          dailyCprCache[cacheKey] = cpr;
+        }
       }
       if (!cpr) {
         cpr = getOfficialCPR(assetId);
       }
-      dailyCprCache[cacheKey] = cpr;
     }
 
     let strategy = null;
